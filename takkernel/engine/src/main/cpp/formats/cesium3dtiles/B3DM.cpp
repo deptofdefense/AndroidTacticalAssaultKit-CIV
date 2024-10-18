@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <algorithm>
 #include <deque>
 #include "formats/cesium3dtiles/B3DM.h"
@@ -715,3 +715,4 @@ namespace {
         return TE_Ok;
     }
 }
+#endif

@@ -300,7 +300,7 @@ public class UserListAdapter extends BaseAdapter implements
             case NUMTRACKS: {
                 Collections.sort(users, numTracksComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(users,
                             Collections.reverseOrder(numTracksComparator));
                 }
@@ -310,7 +310,7 @@ public class UserListAdapter extends BaseAdapter implements
             default: {
                 Collections.sort(users, nameComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(users,
                             Collections.reverseOrder(nameComparator));
                 }

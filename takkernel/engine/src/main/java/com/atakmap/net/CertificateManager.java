@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.log.Log;
 
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -44,13 +46,12 @@ public class CertificateManager {
     private X509TrustManager systemTrustManager = null;
 
     public static final CentralTrustManager SelfSignedAcceptingTrustManager = new CentralTrustManager();
-    private static AtakCertificateDatabaseIFace certificateDatabase = null;
     private static KeyManagerFactoryIFace keyManagerFactory = null;
-    private static HashMap<String, ExtendedSSLSocketFactory> socketFactories = new HashMap<>();
+    private static final Map<String, ExtendedSSLSocketFactory> socketFactories = new HashMap<>();
 
     /**
-     * Obtain an instance of the CertificateManager class.
-     * @return
+     * Obtain the instance of the CertificateManager class.
+     * @return the certificate manager
      */
     public synchronized static CertificateManager getInstance() {
         if (_this == null)
@@ -151,8 +152,7 @@ public class CertificateManager {
 
     private List<X509Certificate> getAcceptedIssuers() {
         List<X509Certificate> trustedIssuers = new LinkedList<>(certificates);
-        List<X509Certificate> certificateDatabaseCerts = certificateDatabase
-                .getCACerts();
+        List<X509Certificate> certificateDatabaseCerts = AtakCertificateDatabase.getCACerts();
         if (certificateDatabaseCerts != null) {
             trustedIssuers.addAll(certificateDatabaseCerts);
         }
@@ -469,7 +469,7 @@ public class CertificateManager {
             }
         }
 
-    };
+    }
 
     public static final class ExtendedSSLSocketFactory
             extends SSLSocketFactory {
@@ -556,7 +556,7 @@ public class CertificateManager {
     public static ExtendedSSLSocketFactory getSockFactory(
             boolean useCache, String server, boolean allowAllHostnames) {
 
-        ExtendedSSLSocketFactory socketFactory = null;
+        ExtendedSSLSocketFactory socketFactory;
         if (useCache) {
             socketFactory = socketFactories.get(server);
             if (socketFactory != null) {
@@ -656,10 +656,12 @@ public class CertificateManager {
         }
     };
 
+    @Deprecated
+    @DeprecatedApi(since="4.6",forRemoval = true,removeAt = "4.9")
     public static void setCertificateDatabase(
             final AtakCertificateDatabaseIFace certdb) {
-        certificateDatabase = certdb;
     }
+
 
     public static void setKeyManagerFactory(
             final KeyManagerFactoryIFace kmf) {
@@ -668,11 +670,11 @@ public class CertificateManager {
 
     public static Bundle certArrayToBundle(X509Certificate[] certs)
             throws CertificateEncodingException {
-        Integer ndx = 0;
+        int ndx = 0;
         Bundle certBundle = new Bundle();
         certBundle.putInt("certCount", certs.length);
         for (X509Certificate cert : certs) {
-            certBundle.putByteArray(ndx.toString(), cert.getEncoded());
+            certBundle.putByteArray(Integer.toString(ndx), cert.getEncoded());
             ndx++;
         }
         return certBundle;
@@ -681,11 +683,11 @@ public class CertificateManager {
     public static List<X509Certificate> certBundleToArray(
             Bundle certBundle) throws CertificateException {
         final List<X509Certificate> results = new ArrayList<>();
-        final Integer certCount = certBundle.getInt("certCount");
+        final int certCount = certBundle.getInt("certCount");
         final CertificateFactory certFactory = CertificateFactory
                 .getInstance("X.509");
-        for (Integer ndx = 0; ndx < certCount; ndx++) {
-            final byte[] decoded = certBundle.getByteArray(ndx.toString());
+        for (int ndx = 0; ndx < certCount; ndx++) {
+            final byte[] decoded = certBundle.getByteArray(Integer.toString(ndx));
             if (decoded != null) {
                 final X509Certificate cert = (X509Certificate) certFactory
                         .generateCertificate(new ByteArrayInputStream(decoded));
@@ -704,10 +706,10 @@ public class CertificateManager {
      * (init() already invoked).
      * @param trusts array of TrustManagers to configure into the new context.
      *        Accepts and used as documented in SSLContext.init()
-     * @throw NoSuchAlgorithmException if there is no underlying security 
+     * @throws NoSuchAlgorithmException if there is no underlying security
      *        provider registered with the JVM that can handle any of the
      *        TAK-preferred SSL protocols.
-     * @throw KeyManagementException if initialization of a new context fails
+     * @throws KeyManagementException if initialization of a new context fails
      */
     public static SSLContext createSSLContext(TrustManager[] trusts) throws NoSuchAlgorithmException, KeyManagementException {
         /*

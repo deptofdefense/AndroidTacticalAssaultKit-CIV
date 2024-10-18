@@ -13,6 +13,7 @@ import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.math.PointD;
 
 import gov.tak.api.annotation.DontObfuscate;
+import gov.tak.api.engine.map.IMapRendererEnums;
 
 /**
  * Control object for moving the ortho-graphic map around the MapView
@@ -58,11 +59,15 @@ public class AtakMapController {
         _mapView.globe.addOnFocusPointChangedListener(new Globe.OnFocusPointChangedListener() {
             @Override
             public void onFocusPointChanged(Globe view, float focusx, float focusy) {
-                for(OnFocusPointChangedListener l : _focusListeners)
-                    l.onFocusPointChanged(focusx, focusy);
+                dispatchFocusChanged(focusx, focusy);
             }
         });
 
+    }
+
+    void dispatchFocusChanged(float focusx, float focusy) {
+        for(OnFocusPointChangedListener l : _focusListeners)
+            l.onFocusPointChanged(focusx, focusy);
     }
 
     /**
@@ -345,18 +350,7 @@ public class AtakMapController {
      * @return The current focus point of the map.
      */
     public Point getFocusPoint() {
-        final float focusX;
-        final float focusY;
-        _mapView.globe.rwlock.acquireRead();
-        try {
-            if(_mapView.globe.pointer.raw == 0L)
-                return new Point(0, 0);
-            focusX = Globe.getFocusPointX(_mapView.globe.pointer.raw);
-            focusY = Globe.getFocusPointY(_mapView.globe.pointer.raw);
-        } finally {
-            _mapView.globe.rwlock.releaseRead();
-        }
-        return new Point ((int)focusX, (int)focusY);
+        return new Point ((int)getFocusX(), (int)getFocusY());
     }
 
     /**
@@ -365,14 +359,8 @@ public class AtakMapController {
      * @return The x-coordinate of the current focus.
      */
     public float getFocusX() {
-        _mapView.globe.rwlock.acquireRead();
-        try {
-            if(_mapView.globe.pointer.raw == 0L)
-                return 0f;
-            return Globe.getFocusPointX(_mapView.globe.pointer.raw);
-        } finally {
-            _mapView.globe.rwlock.releaseRead();
-        }
+        return _mapView.renderer.getRenderContext().getRenderSurface().getWidth() / 2 +
+               _mapView.renderer.getFocusPointOffsetX();
     }
 
     /**
@@ -381,14 +369,11 @@ public class AtakMapController {
      * @return The y-coordinate of the current focus.
      */
     public float getFocusY() {
-        _mapView.globe.rwlock.acquireRead();
-        try {
-            if(_mapView.globe.pointer.raw == 0L)
-                return 0f;
-            return Globe.getFocusPointY(_mapView.globe.pointer.raw);
-        } finally {
-            _mapView.globe.rwlock.releaseRead();
-        }
+        float offY = _mapView.renderer.getFocusPointOffsetY();
+        if(_mapView.renderer.getDisplayOrigin() == IMapRendererEnums.DisplayOrigin.LowerLeft)
+            offY *= -1f;
+        return _mapView.renderer.getRenderContext().getRenderSurface().getHeight() / 2 +
+               offY;
     }
 
     /**

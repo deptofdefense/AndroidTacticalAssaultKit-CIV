@@ -1,8 +1,10 @@
 
 package com.atakmap.android.plugintemplate.plugin;
 
+import com.atak.plugins.impl.AbstractPluginTool;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.plugintemplate.PluginTemplateDropDownReceiver;
+import com.atakmap.util.Disposable;
 
 import android.app.Activity;
 import android.content.Context;
@@ -15,61 +17,22 @@ import transapps.maps.plugin.tool.Group;
 import transapps.maps.plugin.tool.Tool;
 import transapps.maps.plugin.tool.ToolDescriptor;
 
-public class PluginTemplateTool extends Tool implements ToolDescriptor {
-
-    private final Context context;
+/**
+ * Please note:
+ *     Support for versions prior to 4.5.1 can make use of a copy of AbstractPluginTool shipped with
+ *     the plugin.
+ */
+public class PluginTemplateTool extends AbstractPluginTool implements Disposable {
 
     public PluginTemplateTool(Context context) {
-        this.context = context;
-    }
-
-    @Override
-    public String getDescription() {
-        return context.getString(R.string.app_name);
-    }
-
-    @Override
-    public Drawable getIcon() {
-        return (context == null) ? null
-                : context.getResources().getDrawable(R.drawable.ic_launcher);
-    }
-
-    @Override
-    public Group[] getGroups() {
-        return new Group[] {
-                Group.GENERAL
-        };
-    }
-
-    @Override
-    public String getShortDescription() {
-        return context.getString(R.string.app_name);
-    }
-
-    @Override
-    public Tool getTool() {
-        return this;
-    }
-
-    @Override
-    public void onActivate(Activity arg0, MapView arg1, ViewGroup arg2,
-            Bundle arg3,
-            ToolCallback arg4) {
-
-        // Hack to close the dropdown that automatically opens when a tool
-        // plugin is activated.
-        if (arg4 != null) {
-            arg4.onToolDeactivated(this);
-        }
-        // Intent to launch the dropdown or tool
-
-        //arg2.setVisibility(ViewGroup.INVISIBLE);
-        Intent i = new Intent(
+        super(context,
+                context.getString(R.string.app_name),
+                context.getString(R.string.app_name),
+                context.getResources().getDrawable(R.drawable.ic_launcher),
                 PluginTemplateDropDownReceiver.SHOW_PLUGIN);
-        AtakBroadcast.getInstance().sendBroadcast(i);
     }
 
     @Override
-    public void onDeactivate(ToolCallback arg0) {
+    public void dispose() {
     }
 }

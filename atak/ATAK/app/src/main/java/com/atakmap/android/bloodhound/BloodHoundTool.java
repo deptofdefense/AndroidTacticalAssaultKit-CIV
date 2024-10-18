@@ -67,7 +67,6 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.DirectionType;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.Ellipsoid;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -90,7 +89,6 @@ public class BloodHoundTool extends ButtonTool implements
     public static final String BLOOD_HOUND = "com.atakmap.android.toolbars.BLOOD_HOUND";
     public static final String TOOL_IDENTIFIER = "com.atakmap.android.toolbars.BloodHoundButtonTool";
     private static final String TAG = "com.atakmap.android.bloodhound.BloodHoundToolbarButton";
-
 
     private final Timer timer;
     private FlashTimerTask timerTask;
@@ -116,7 +114,6 @@ public class BloodHoundTool extends ButtonTool implements
 
     private PointMapItem _startItem = null;
     private PointMapItem _endItem = null;
-
 
     private boolean running = false;
     private boolean manuallyClosed = true;
@@ -567,8 +564,9 @@ public class BloodHoundTool extends ButtonTool implements
         LayoutInflater inflater = LayoutInflater.from(_mapView.getContext());
         View view = inflater.inflate(R.layout.bloodhound_select, null);
 
-        ((TextView)view.findViewById(R.id.spinnerItemsLabel)).setText(
-                ResourceUtil.getResource(R.string.civ_quick_select_spi, R.string.quick_select_spi));
+        ((TextView) view.findViewById(R.id.spinnerItemsLabel)).setText(
+                ResourceUtil.getResource(R.string.civ_quick_select_spi,
+                        R.string.quick_select_spi));
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(
                 _mapView.getContext());
@@ -1264,7 +1262,7 @@ public class BloodHoundTool extends ButtonTool implements
         }
         if (running
                 && _startItem != null
-                && _startItem != null)
+                && _endItem != null)
             _updateLinkInfo();
     }
 
@@ -1309,7 +1307,7 @@ public class BloodHoundTool extends ButtonTool implements
                 + getCoordinateString(endPoint.getPoint()) + "\n";
 
         //be sure slant range was computed
-        double slantRange = DistanceCalculations.calculateSlantRange(
+        double slantRange = GeoCalculations.slantDistanceTo(
                 startPoint.getPoint(), endPoint.getPoint());
         if (!Double.isNaN(slantRange)) {
             if (_displaySlantRange) {

@@ -110,11 +110,12 @@ public class GLMarkerDrawableWidget extends GLDrawableWidget {
      * @param height Marker height (if applicable)
      */
     private void updateScreenPoint(GeoPoint point, AltitudeMode altMode,
-                                   double height) {
+            double height) {
 
         // Check if a redraw is necessary
         boolean nadirClamp = _clampCtrl != null && _clampCtrl
-                .getClampToGroundAtNadir() && Double.compare(
+                .getClampToGroundAtNadir()
+                && Double.compare(
                         orthoView.currentScene.drawTilt, 0) == 0;
         int drawVersion = orthoView.currentScene.drawVersion;
         int terrainVersion = orthoView.getTerrainVersion();

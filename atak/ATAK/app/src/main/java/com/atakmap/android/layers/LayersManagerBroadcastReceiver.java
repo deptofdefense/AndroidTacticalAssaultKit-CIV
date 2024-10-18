@@ -352,7 +352,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                 !layerAdapter.layer.isAutoSelect()));
             }
             if (layerAdapter != null) {
-                Log.d(TAG, "ACTION_SELECT_LAYER: " + layerAdapter.toString());
+                Log.d(TAG, "ACTION_SELECT_LAYER: " + layerAdapter);
                 activateLayer(layerAdapter, false);
             }
             return;
@@ -741,7 +741,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
             return;
         }
 
-        Log.d(TAG, "view fav: " + fav.toString());
+        Log.d(TAG, "view fav: " + fav);
 
         getMapView().getMapController().dispatchOnPanRequested();
         final MapRenderer2 renderer = getMapView().getRenderer3();
@@ -1258,13 +1258,14 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 if (client == null)
                     return false;
 
-                final boolean[] retval = new boolean[]{
+                final boolean[] retval = new boolean[] {
                         false
                 };
                 TileContainerFactory.visitCompatibleSpis(
                         new Visitor<Collection<TileContainerSpi>>() {
                             @Override
-                            public void visit(Collection<TileContainerSpi> object) {
+                            public void visit(
+                                    Collection<TileContainerSpi> object) {
                                 retval[0] = !object.isEmpty();
                             }
                         }, client);
@@ -1461,12 +1462,15 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         if (servicePath.isEmpty())
             return;
 
-        MapServiceTask mapServiceTask = new MapServiceTask(getMapView(), new MapServiceTaskCallback() {
-            @Override
-            public void selectQueryLayersToAdd(String uri, ServiceListing querier) {
-                LayersManagerBroadcastReceiver.this.selectQueryLayersToAdd(uri, querier);
-            }
-        });
+        MapServiceTask mapServiceTask = new MapServiceTask(getMapView(),
+                new MapServiceTaskCallback() {
+                    @Override
+                    public void selectQueryLayersToAdd(String uri,
+                            ServiceListing querier) {
+                        LayersManagerBroadcastReceiver.this
+                                .selectQueryLayersToAdd(uri, querier);
+                    }
+                });
         mapServiceTask.execute(servicePath);
     }
 
@@ -1492,10 +1496,12 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
         final Context context = getMapView().getContext();
         final LayoutInflater inflater = LayoutInflater.from(context);
-        final View view = inflater.inflate(R.layout.wmswfs_results, null, false);
+        final View view = inflater.inflate(R.layout.wmswfs_results, null,
+                false);
         final EditText searchTerms = view.findViewById(R.id.search_filter);
         final ListView listView = view.findViewById(R.id.results);
-        final ServiceAdapter adapter = new ServiceAdapter(context, sortedLayers);
+        final ServiceAdapter adapter = new ServiceAdapter(context,
+                sortedLayers);
         listView.setAdapter(adapter);
 
         searchTerms.addTextChangedListener(new TextWatcher() {
@@ -1503,14 +1509,15 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
             public void afterTextChanged(Editable s) {
             }
 
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            public void beforeTextChanged(CharSequence s, int start, int count,
+                    int after) {
             }
 
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            public void onTextChanged(CharSequence s, int start, int before,
+                    int count) {
                 adapter.getFilter().filter(s.toString());
             }
         });
-
 
         String title = getMapView().getContext().getString(R.string.layers_on)
                 + querier.title;
@@ -1542,7 +1549,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                 } else {
                                     // for each layer the user checked, add that to
                                     // our list of sources
-                                    for (Service layer: layerList) {
+                                    for (Service layer : layerList) {
                                         doAddMapLayer(layer);
                                     }
                                 }
@@ -1611,7 +1618,6 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 .show();
     }
 
-
     private static class ServiceAdapter extends ArrayAdapter<Service> {
 
         private final List<Service> original = new ArrayList<>();
@@ -1637,24 +1643,24 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
         @Override
         public Filter getFilter() {
-            if (filter == null){
+            if (filter == null) {
                 filter = new ServiceFilter();
             }
             return filter;
         }
+
         @Override
         public int getCount() {
             return filtered.size();
         }
-
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             ViewHolder holder;
             if (convertView == null) {
 
-                convertView = LayoutInflater.from(getContext()).
-                        inflate(R.layout.wmswfs_item, null, false);
+                convertView = LayoutInflater.from(getContext())
+                        .inflate(R.layout.wmswfs_item, null, false);
 
                 holder = new ViewHolder();
                 holder.checkbox = convertView.findViewById(R.id.selectCB);
@@ -1666,15 +1672,17 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
             }
             Service s = filtered.get(position);
             holder.textView.setText(s.getName());
-            holder.checkbox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    if (isChecked)
-                        selected.add(s);
-                    else
-                        selected.remove(s);
-                }
-            });
+            holder.checkbox
+                    .setOnCheckedChangeListener(new OnCheckedChangeListener() {
+                        @Override
+                        public void onCheckedChanged(CompoundButton buttonView,
+                                boolean isChecked) {
+                            if (isChecked)
+                                selected.add(s);
+                            else
+                                selected.remove(s);
+                        }
+                    });
             holder.checkbox.setChecked(selected.contains(s));
             return convertView;
         }
@@ -1691,7 +1699,8 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                             LocaleUtil.getCurrent());
                     List<Service> filtered = new ArrayList<>();
                     for (Service service : original)
-                        if (service.getName().toLowerCase(LocaleUtil.getCurrent())
+                        if (service.getName()
+                                .toLowerCase(LocaleUtil.getCurrent())
                                 .contains(termLower))
                             filtered.add(service);
                     results.values = filtered;
@@ -1702,17 +1711,16 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
             @Override
             protected void publishResults(CharSequence constraint,
-                                      FilterResults results) {
+                    FilterResults results) {
                 filtered.clear();
                 notifyDataSetChanged();
-                filtered.addAll((ArrayList<Service>)results.values);
+                filtered.addAll((ArrayList<Service>) results.values);
                 notifyDataSetChanged();
             }
 
         }
 
     }
-
 
     // The user wants to add this Layer as an online source.
     // Create a mobac XML file so it will be persisted, and add it to the
@@ -2146,7 +2154,8 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         else if (v.getId() == R.id.addOnlineSource_btn) {
 
             final LayoutInflater inflater = LayoutInflater.from(c);
-            final View view = inflater.inflate(R.layout.wmswfs_dialog, null, false);
+            final View view = inflater.inflate(R.layout.wmswfs_dialog, null,
+                    false);
             final EditText input = view.findViewById(R.id.wmswfs_address);
             // Use the last string the user entered into the box, so that
             // they don't have to start from scratch in case they
@@ -2186,25 +2195,27 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     }
 
     // Map service query uses the network, must use AsyncTask
-    static class MapServiceTask extends AsyncTask<String, Void, Set<ServiceListing>> {
-        
+    static class MapServiceTask
+            extends AsyncTask<String, Void, Set<ServiceListing>> {
+
         private Exception error = null;
         private String url = null;
         private ProgressDialog pd;
         private final MapView mapView;
         private final MapServiceTaskCallback callback;
 
-        public MapServiceTask(@NonNull MapView mapView, @NonNull MapServiceTaskCallback callback) {
+        public MapServiceTask(@NonNull MapView mapView,
+                @NonNull MapServiceTaskCallback callback) {
             this.mapView = mapView;
             this.callback = callback;
         }
-
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
             pd = new ProgressDialog(mapView.getContext());
-            pd.setTitle(mapView.getContext().getString(R.string.querying_the_server));
+            pd.setTitle(mapView.getContext()
+                    .getString(R.string.querying_the_server));
             pd.setMessage(mapView.getContext().getString(R.string.please_wait));
             pd.setCancelable(false);
             pd.setIndeterminate(true);
@@ -2229,7 +2240,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         @Override
         protected void onPostExecute(Set<ServiceListing> results) {
 
-            if (pd!=null) {
+            if (pd != null) {
                 pd.dismiss();
             }
             // If one of our services can be reached, select that
@@ -2246,7 +2257,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                             new Comparator<ServiceListing>() {
                                 @Override
                                 public int compare(ServiceListing lhs,
-                                                   ServiceListing rhs) {
+                                        ServiceListing rhs) {
                                     return lhs.serverType
                                             .compareToIgnoreCase(
                                                     rhs.serverType);

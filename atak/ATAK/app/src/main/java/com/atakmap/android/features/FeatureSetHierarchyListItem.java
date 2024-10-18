@@ -559,8 +559,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
                 }
             } else {
                 // Assume this is a feature ID - query for it
-                FeatureDataStore2.FeatureQueryParameters params =
-                        new FeatureDataStore2.FeatureQueryParameters();
+                FeatureDataStore2.FeatureQueryParameters params = new FeatureDataStore2.FeatureQueryParameters();
                 params.limit = 1;
                 params.featureSetFilter = new FeatureSetQueryParameters();
                 params.featureSetFilter.limit = 1;
@@ -830,12 +829,12 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
     @NonNull
     public FeatureDataStore2.FeatureQueryParameters getFeatureQueryParams() {
         // Query parameters for all features in this set
-        FeatureDataStore2.FeatureQueryParameters params =
-                new FeatureDataStore2.FeatureQueryParameters();
+        FeatureDataStore2.FeatureQueryParameters params = new FeatureDataStore2.FeatureQueryParameters();
         params.featureSetFilter = new FeatureSetQueryParameters();
         if (entry.fsid != FeatureDataStore.FEATURESET_ID_NONE) {
             // This set has a defined feature ID
-            params.featureSetFilter.ids = Collections.singleton(this.entry.fsid);
+            params.featureSetFilter.ids = Collections
+                    .singleton(this.entry.fsid);
         } else {
             // This set is a folder
             params.featureSetFilter.names = new HashSet<>(2);

@@ -18,7 +18,6 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
 /**
- *
  * Preference fragment used to display the available preferences for
  * customizing th ATAk actionbar, the user can control the icon colors as well as
  * the action bar background see Bug: 6194
@@ -55,7 +54,6 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
         addPreferencesFromResource(getResourceID());
 
         context = getActivity();
-
         //the custom action bar icon colors defaults to white
         final Preference iconColors = findPreference(getActivity()
                 .getResources().getString(
@@ -74,6 +72,7 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
 
         //the custom background color used for the ATAK background action bar defaults
         // to 70% transparent black
+
         final Preference backgroundColor = findPreference(getActivity()
                 .getResources()
                 .getString(R.string.selected_actionbar_background_color));
@@ -136,8 +135,10 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
                         });
     }
 
-    /**Displays a standard dialog extended class that informs user
+    /**
+     * Displays a standard dialog extended class that informs user
      * that color selected is a darken tint and may not show well with certain action bar colors
+     *
      * @param color in color to bind if user selected to use this color
      */
     private void showWarningDialog(final String color) {
@@ -182,6 +183,7 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
     /**
      * Tests the RGB color values of the int color
      * returns if the color is a light or dark color based on saturation
+     *
      * @param color the color to test
      * @return true if the color is dark.
      */
@@ -198,7 +200,8 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
     /**
      * Attaches and modifies the preference for the icon color / action bar background
      * used to reset back to default setting
-     * @param key the key to reset.
+     *
+     * @param key          the key to reset.
      * @param defaultValue is the default value to reset things back to
      */
     private void resetActionBarPrefs(String key, String defaultValue) {
@@ -236,9 +239,11 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
         alert.show();
     }
 
-    /**binds the new string color value to the @param key in
+    /**
+     * binds the new string color value to the @param key in
      * preferences
-     * @param key the key to record the color value to
+     *
+     * @param key   the key to record the color value to
      * @param color the color value.
      */
     private void attachNewColorValue(String key, String color) {

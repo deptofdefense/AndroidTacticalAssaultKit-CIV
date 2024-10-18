@@ -4,10 +4,12 @@ package com.atakmap.android.routes.nav;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.routes.RouteNavigationManager;
 import com.atakmap.android.routes.RouteNavigator;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.CameraController;
 
@@ -23,8 +25,6 @@ public class NavigationZoomService implements
      * Fields and Properties
      *******************************************************************************/
 
-    private final double desiredZoom = 1.120997868311173E-4;
-    private double maneuverDesiredZoom = 3.600922593220702E-4;
     private double cachedZoomLevel = 0;
     private RouteNavigator routeNavigator;
     private SharedPreferences preferences;
@@ -37,7 +37,8 @@ public class NavigationZoomService implements
         if (preferences.getBoolean(
                 SceneSettingService.PREF_TRADITIONAL_NAV_MODE,
                 SceneSettingService.TRADITIONAL_NAV_MODE_DEFAULT)) {
-            CameraController.Programmatic.zoomTo(routeNavigator.getMapView().getRenderer3(),
+            CameraController.Programmatic.zoomTo(
+                    routeNavigator.getMapView().getRenderer3(),
                     zoom, true);
         }
     }
@@ -58,7 +59,17 @@ public class NavigationZoomService implements
         cachedZoomLevel = navigator.getMapView().getMapScale();
         navigator.getNavManager().registerListener(this);
 
-        zoomToIfDesired(desiredZoom);
+        MapView mapView = navigator.getMapView();
+        PointMapItem self = mapView.getSelfMarker();
+
+        if (preferences.getBoolean(
+                SceneSettingService.PREF_TRADITIONAL_NAV_MODE,
+                SceneSettingService.TRADITIONAL_NAV_MODE_DEFAULT)) {
+            ATAKUtilities.scaleToFit(mapView,
+                    new GeoPoint[] {
+                            self.getPoint()
+                    }, 100, 100);
+        }
     }
 
     @Override

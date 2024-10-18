@@ -24,8 +24,10 @@ set(takenginejni_COMMON_SRCS
     ${SRC_DIR}/common.cpp
     ${SRC_DIR}/interop/core/Interop.cpp
     ${SRC_DIR}/interop/core/ManagedLayer.cpp
+    ${SRC_DIR}/interop/core/ManagedMapRenderer2.cpp
     ${SRC_DIR}/interop/core/ManagedProjection.cpp
     ${SRC_DIR}/interop/core/ManagedRenderContext.cpp
+    ${SRC_DIR}/interop/core/ManagedRenderSurface.cpp
     ${SRC_DIR}/interop/core/ManagedVisibilityListener.cpp
     ${SRC_DIR}/interop/db/Interop.cpp
     ${SRC_DIR}/interop/db/ManagedDatabaseProvider.cpp
@@ -65,10 +67,12 @@ set(takenginejni_COMMON_SRCS
     ${SRC_DIR}/interop/util/ManagedDataInput2.cpp
     ${SRC_DIR}/interop/util/ManagedDataOutput2.cpp
     ${SRC_DIR}/jattributeset.cpp
+    ${SRC_DIR}/jcameracontroller.cpp
     ${SRC_DIR}/jconfigoptions.cpp
     ${SRC_DIR}/jdatabaseimpl.cpp
     ${SRC_DIR}/jdatatype.cpp
     ${SRC_DIR}/jdrginfo.cpp
+    ${SRC_DIR}/jdtedelevationsource.cpp
     ${SRC_DIR}/jegm96.cpp
     ${SRC_DIR}/jelevationheatmaplayer.cpp
     ${SRC_DIR}/jelevationmanager.cpp
@@ -116,6 +120,7 @@ set(takenginejni_COMMON_SRCS
     ${SRC_DIR}/jnativelayer.cpp
     ${SRC_DIR}/jnativemodel.cpp
     ${SRC_DIR}/jnativeprojection.cpp
+    ${SRC_DIR}/jnativerendersurfacesizechangedlistener.cpp
     ${SRC_DIR}/jnativerunnable.cpp
     ${SRC_DIR}/josrutils.cpp
     ${SRC_DIR}/jpersistentdatasourcefeaturedatastore2.cpp

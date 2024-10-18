@@ -143,9 +143,6 @@ public final class Globe implements IGlobe, Disposable {
      */
     Globe(int width, int height, double displayDpi, double minScale, double maxScale) {
         this(create(width, height, displayDpi, minScale, maxScale), null);
-
-        setSize(this.pointer.raw, width, height);
-        setFocusPointOffset(this.pointer.raw, 0, 0);
     }
 
     Globe(Pointer ptr, Object ownerRef) {
@@ -816,174 +813,6 @@ public final class Globe implements IGlobe, Disposable {
     private Map<Long, Layer> pointerToLayer;
 
     /*************************************************************************/
-
-    // The following will be refactored out with map view state at a later time
-    static boolean isHae(GeoPoint p) {
-        return (p.getAltitudeReference() == GeoPoint.AltitudeReference.HAE);
-    }
-
-    static void panTo(Globe globe, GeoPoint location, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            panTo(globe.pointer.raw, location.getLatitude(), location.getLongitude(), location.getAltitude(), isHae(location), animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void panZoomTo(Globe globe, GeoPoint location, double scale, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            panZoomTo(globe.pointer.raw, location.getLatitude(), location.getLongitude(), location.getAltitude(), isHae(location), scale, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void panZoomRotateTo(Globe globe, GeoPoint location, double scale, double rotation, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            panZoomRotateTo(globe.pointer.raw, location.getLatitude(), location.getLongitude(), location.getAltitude(), isHae(location), scale, rotation, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void panTo(Globe globe, GeoPoint location, float viewx, float viewy, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            panTo(globe.pointer.raw, location.getLatitude(), location.getLongitude(), location.getAltitude(), isHae(location), viewx, viewy, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void panByAtScale(Globe globe, float x, float y, double scale, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            panByAtScale(globe.pointer.raw, x, y, scale, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void panBy(Globe globe, float x, float y, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            panBy(globe.pointer.raw, x, y, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void panByScaleRotate(Globe globe, float x, float y, double scale, double rotate, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            panByScaleRotate(globe.pointer.raw, x, y, scale, rotate, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void zoomTo(Globe globe, double scale, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            zoomTo(globe.pointer.raw, scale, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void zoomBy(Globe globe, double scale, float x, float y, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            zoomBy(globe.pointer.raw, scale, x, y, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void rotateTo(Globe globe, double rotation, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            rotateTo(globe.pointer.raw, rotation, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void rotateBy(Globe globe, double theta, float xpos, float ypos, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            rotateBy(globe.pointer.raw, theta, xpos, ypos, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void tiltTo(Globe globe, double tilt, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            tiltTo(globe.pointer.raw, tilt, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void tiltBy(Globe globe, double tilt, float xpos, float ypos, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            tiltBy(globe.pointer.raw, tilt, xpos, ypos, animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void tiltBy(Globe globe, double tilt, GeoPoint location, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            tiltBy(globe.pointer.raw, tilt, location.getLatitude(), location.getLongitude(), location.getAltitude(), isHae(location), animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void rotateBy(Globe globe, double theta, GeoPoint location, boolean animate) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            rotateBy(globe.pointer.raw, theta, location.getLatitude(), location.getLongitude(), location.getAltitude(), isHae(location), animate);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-    static void setFocusPointOffset(Globe globe, float offsetX, float offsetY) {
-        globe.rwlock.acquireRead();
-        try {
-            if(globe.pointer.raw == 0L)
-                throw new IllegalStateException();
-            setFocusPointOffset(globe.pointer.raw, offsetX, offsetY);
-        } finally {
-            globe.rwlock.releaseRead();
-        }
-    }
-
-    /*************************************************************************/
     // Interop implementation
     static long getPointer(Globe object) {
         if(object != null)
@@ -1020,66 +849,18 @@ public final class Globe implements IGlobe, Disposable {
     static native Pointer registerNativeCallbackForwarder(long pointer, Globe.NativeCallbackForwarder l);
     static native void unregisterNativeCallbackForwarder(long pointer, Pointer cl);
 
-    // view state !!! will be refactored out !!!!
     public static native double getFullEquitorialExtentPixels(double dpi);
-    static native double getDisplayDpi(long pointer);
-
-    //static native boolean updateView (long pointer, double latitude, double longitude, double scale, double rotation, double tilt, boolean animate);
-    //static native int getProjection(long pointer);
     static native int setProjection(long pointer, int srid);
     static native double getMaxMapScale(long pointer);
     static native double getMinMapScale(long pointer);
-    //static native double getMapScaleImpl(long pointer);
-    //static native double getMapResolutionImpl(long raw);
-    //static native double getMapResolutionImpl(long raw, double mapScale);
-    //static native double mapResolutionAsMapScale(long raw, double resolution);
-    //static native double setElevationExaggerationFactor(long raw, double factor);
-    //static native double getElevationExaggerationFactor(long raw);
-    //static native boolean forward(long pointer, double latitude, double longitude, double alt, boolean altIsHae, PointD result);
-
     static native double getMinLatitude(long pointer);
     static native double getMaxLatitude(long pointer);
     static native double getMinLongitude(long pointer);
     static native double getMaxLongitude(long pointer);
-
-    //static native boolean isAnimating(long pointer);
-    //static native double getMapRotation(long pointer);
-    //static native double getMapTilt(long pointer);
-    //static native GeoPoint getPoint(long pointer);
     static native double setMaxMapTilt(long pointer, double maxTilt);
     static native void setContinuousScrollEnabled(long pointer, boolean v);
     static native boolean isContinuousScrollEnabled(long pointer);
 
-    static native void setFocusPointOffset(long pointer, float x, float y);
-    static native void setSize(long pointer, int width, int height);
-    static native int getWidth(long pointer);
-    static native int getHeight(long pointer);
-    static native Pointer createSceneModel(long pointer);
-
     public static native double getMapResolution(double dpi, double scale);
     public static native double getMapScale(double dpi, double resolution);
-
-    // controller methods !!! will be refactored out !!!
-
-    static native void panTo(long ptr, double lat, double lng, double alt, boolean hae, boolean animate);
-    static native void panZoomTo(long ptr, double lat, double lng, double alt, boolean hae, double scale, boolean animate);
-    static native void panZoomRotateTo(long ptr, double lat, double lng, double alt, boolean hae, double scale, double rotation, boolean animate);
-    static native void panTo(long ptr, double lat, double lng, double alt, boolean hae, float viewx, float viewy, boolean animate);
-    static native void panByAtScale(long ptr, float x, float y, double scale, boolean animate);
-    static native void panBy(long ptr, float x, float y, boolean animate);
-    static native void panByScaleRotate(long ptr, float x, float y, double scale, double rotate, boolean animate);
-    static native void zoomTo(long ptr, double scale, boolean animate);
-    static native void zoomBy(long ptr, double scale, float x, float y, boolean animate);
-    static native void rotateTo(long ptr, double rotation, boolean animate);
-    static native void rotateBy(long ptr, double theta, float xpos, float ypos, boolean animate);
-    static native void tiltTo(long ptr, double tilt, boolean animate);
-    static native void tiltTo(long ptr, double tilt, double rotation, boolean animate);
-    static native void tiltBy(long ptr, double tilt, float xpos, float ypos, boolean animate);
-    static native void tiltBy(long ptr, double tilt, double latitude, double longitude, double alt, boolean hae, boolean animate);
-    static native void rotateBy(long ptr, double theta, double latitude, double longitude, double alt, boolean hae, boolean animate);
-    static native void updateBy(long ptr, double scale, double rotation, double tilt, float xpos, float ypos, boolean animate);
-    static native void updateBy(long ptr, double scale, double rotation, double tilt, double lat, double lng, double alt, boolean hae, boolean animate);
-
-    static native float getFocusPointX(long ptr);
-    static native float getFocusPointY(long ptr);
 }

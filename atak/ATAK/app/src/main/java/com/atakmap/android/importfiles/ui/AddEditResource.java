@@ -114,7 +114,7 @@ public class AddEditResource {
             _isUpdate = false;
         } else {
             Log.d(TAG,
-                    "User editing existing resource: " + resource.toString());
+                    "User editing existing resource: " + resource);
             _isUpdate = true;
         }
 
@@ -452,7 +452,7 @@ public class AddEditResource {
                     // user turned off auto refresh..
                     Log.d(TAG,
                             "User edit disabled refresh interval for resource: "
-                                    + newrr.toString());
+                                    + newrr);
 
                     AlertDialog.Builder b = new AlertDialog.Builder(_context);
                     b.setTitle(R.string.importmgr_editing_resource);
@@ -463,7 +463,7 @@ public class AddEditResource {
                         @Override
                         public void onClick(DialogInterface d, int w) {
                             Log.d(TAG, "Un-scheduling NetworkLink refresh: "
-                                    + newrr.toString());
+                                    + newrr);
                             ImportExportMapComponent.getInstance()
                                     .refreshNetworkLink(newrr, true);
 
@@ -487,7 +487,7 @@ public class AddEditResource {
                     // user turned on auto refresh
                     Log.d(TAG,
                             "User edit enabled refresh interval for resource: "
-                                    + newrr.toString());
+                                    + newrr);
 
                     AlertDialog.Builder b = new AlertDialog.Builder(_context);
                     b.setTitle(R.string.importmgr_editing_resource);
@@ -504,7 +504,7 @@ public class AddEditResource {
                         .getRefreshSeconds()) {
                     Log.d(TAG,
                             "User edit changed refresh interval for resource: "
-                                    + newrr.toString());
+                                    + newrr);
 
                     if (newrr.getRefreshSeconds() > 0) {
                         // user changed auto refresh interval and its currently

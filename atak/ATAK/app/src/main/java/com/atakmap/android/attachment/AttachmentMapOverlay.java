@@ -13,6 +13,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
 import com.atakmap.android.image.GalleryFileItem;
 import com.atakmap.android.image.GalleryItem;
@@ -116,6 +118,7 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
             return mi != null && attachment != null;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return String.format(LocaleUtil.getCurrent(), "%s has %s",

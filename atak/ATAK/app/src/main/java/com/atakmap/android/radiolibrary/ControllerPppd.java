@@ -1,20 +1,26 @@
 
 package com.atakmap.android.radiolibrary;
 
-import java.io.File;
-import java.io.IOException;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.ListView;
+
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
+import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.DefaultIOProvider;
 import com.atakmap.coremap.log.Log;
 
-import android.content.Context;
-import android.content.Intent;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
-import android.content.BroadcastReceiver;
+import java.io.File;
 import java.net.NetworkInterface;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
+import java.util.List;
 
-public class ControllerPppd extends BroadcastReceiver implements Runnable {
+public class ControllerPppd extends BroadcastReceiver
+        implements Runnable, RadiosQueriedListener {
 
     public static final String TAG = "ControllerPppd";
     Thread t;
@@ -22,14 +28,27 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
     private final Context context;
     private final File root;
 
-    public ControllerPppd(Context c) {
+    /**
+     * Action for the system receiver
+     */
+    public static String ACTION = "com.atakmap.pppd";
+
+    /**
+     * The Harris Radio Manager
+     */
+    private final HarrisSaRadioManager harrisSaRadioManager;
+
+    public ControllerPppd(Context c,
+            HarrisSaRadioManager harrisSaRadioManager) {
         context = c;
         // For use with the Android S6 com.atakmap.Samservices
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
-        filter.addAction("com.atakmap.pppd");
+        filter.addAction(ACTION);
         AtakBroadcast.getInstance().registerSystemReceiver(this, filter);
-        root = new File(context.getFilesDir(), "ppp");
 
+        this.harrisSaRadioManager = harrisSaRadioManager;
+
+        root = new File(context.getFilesDir(), "ppp");
     }
 
     synchronized public void start() {
@@ -38,11 +57,12 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
             FileSystemUtils.copyFile(new File(root, "options"),
                     FileSystemUtils.getItem("tools/.options"),
                     new DefaultIOProvider());
+
+            harrisSaRadioManager.addListener(this);
+            harrisSaRadioManager.queryRadios();
         } catch (Exception e) {
             Log.e(TAG, "error copying file over", e);
         }
-        t = new Thread(this);
-        t.start();
     }
 
     @Override
@@ -51,23 +71,21 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
             try {
                 NetworkInterface nd = NetworkInterface.getByName("ppp0");
                 if (nd == null || !nd.isUp()) {
-                    String s = findDevNode();
-
-                    // For use with the Android S6 com.atakmap.Samservices
-
-                    if (s != null) {
-                        Intent i = new Intent("com.atakmap.exec");
-                        i.putExtra("command", "pppd");
-                        i.putExtra(
-                                "args",
-                                s
-                                        + " file "
-                                        + FileSystemUtils
-                                                .getItem("tools/.options"));
-                        i.putExtra("return", "com.atakmap.pppd");
-                        AtakBroadcast.getInstance().sendSystemBroadcast(i);
+                    if (harrisSaRadioManager.getSelectedRadio() != null) {
+                        int lastport = harrisSaRadioManager.getSelectedRadio()
+                                .getLastPort();
+                        String s = "/dev/ttyACM" + lastport;
+                        sendIntent(s);
                     } else {
-                        Log.d(TAG, "no connection to a Harris radio found");
+                        final String genericSerial = getGenericSerial();
+                        if (genericSerial != null) {
+                            Log.d(TAG, "found a generic tty device - "
+                                    + genericSerial);
+                            sendIntent(genericSerial);
+                        } else {
+                            Log.d(TAG, "no connection to a Harris radio found");
+                            stop();
+                        }
                     }
                 }
             } catch (Exception ie) {
@@ -81,63 +99,47 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
 
     }
 
+    private String getGenericSerial() {
+        String[] altDevNodes = new String[] {
+                "/dev/ttyUSB0", "/dev/ttyACM0"
+        };
+        for (String dev : altDevNodes)
+            if (new File(dev).exists())
+                return dev;
+
+        return null;
+    }
+
+    private void sendIntent(String s) {
+        // For use with the Android S6 com.atakmap.Samservices
+        Intent i = new Intent("com.atakmap.exec");
+        i.putExtra("command", "pppd");
+        i.putExtra(
+                "args",
+                s
+                        + " file "
+                        + FileSystemUtils
+                                .getItem("tools/.options"));
+        i.putExtra("return", "com.atakmap.pppd");
+        AtakBroadcast.getInstance().sendSystemBroadcast(i);
+
+    }
+
     synchronized public void stop() {
         Log.d(TAG, "stopping the polling for Harris SA");
+        harrisSaRadioManager.removeListener(this);
+
         cancelled = true;
-        if (t != null)
+        if (t != null) {
             t.interrupt();
-        t = null;
-        FileSystemUtils.getItem("tools/.options").delete();
-    }
-
-    /**
-     * Constructs a dev node with the largest ttyACM which is of type 
-     * 19a5/4/0.  Returns null if no dev node found matching that 
-     * criteria.
-     */
-    private String findDevNode() {
-
-        int acm = -1;
-
-        for (int i = 0; i < 25; ++i) {
-            boolean found = find("19a5/4/0",
-                    new File("/sys/class/tty/ttyACM" + i + "/device/uevent"));
-            if (found) {
-                // do not early break here, we need to find the last one.
-                acm = i;
-            }
+            t = null;
         }
-
-        if (acm < 0)
-            return null;
-
-        Log.d(TAG, "found attached Harris radio at: /dev/ttyACM" + acm);
-        return "/dev/ttyACM" + acm;
-
-    }
-
-    /**
-     * Finds a string within a file.
-     * @param term term the terms to search for in the file
-     * @param f file the file.
-     * @return true if the term exists
-     */
-    private boolean find(final String term, final File f) {
-        try {
-            String s = FileSystemUtils.copyStreamToString(f,
-                    new DefaultIOProvider());
-            if (s != null && s.contains(term))
-                return true;
-        } catch (IOException ioe) {
-            // error occurred reading the file.
-            return false;
+        if (!FileSystemUtils.getItem("tools/.options").delete()) {
+            Log.d(TAG, "failed to delete .options");
         }
-
-        return false;
     }
 
     public void dispose() {
-
         try {
             AtakBroadcast.getInstance().unregisterSystemReceiver(this);
         } catch (Exception e) {
@@ -148,7 +150,71 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
     @Override
     public void onReceive(Context context, Intent intent) {
         final String action = intent.getAction();
-        Log.d(TAG, "result received: " + action);
+        if (action.equals(ACTION)) {
+            Log.d(TAG, "result received: " + action + ", status: "
+                    + intent.getExtras().get("status"));
+        }
     }
 
+    /**
+     * Fires when the radios are finished being queried
+     *
+     * @param radios The radios they have been queried
+     */
+    @Override
+    public void radiosQueried(List<HarrisRadio> radios) {
+        harrisSaRadioManager.removeListener(this);
+        if (harrisSaRadioManager.pppConnectionExists()) {
+            //If ppp connection already exists, then just start the thread.
+            t = new Thread(this);
+            t.start();
+        } else if (radios.size() == 1) {
+            // get the first and only radio and use that
+            harrisSaRadioManager.setSelectedRadio(radios.get(0));
+            t = new Thread(this);
+            t.start();
+        } else if (radios.size() > 1) {
+            //Prompt the user with multiple radios
+            final AlertDialog.Builder builder = new AlertDialog.Builder(
+                    context);
+
+            //Load list of radios
+            CharSequence[] radioDescriptions = new CharSequence[radios.size()];
+            int i = 0;
+            for (HarrisRadio radio : radios) {
+                radioDescriptions[i++] = radio.toString();
+            }
+
+            //Create dialog
+            builder.setTitle(R.string.select_harris_sa_radio)
+                    .setCancelable(false)
+                    .setSingleChoiceItems(radioDescriptions, 0, null)
+                    .setPositiveButton(R.string.ok, (dialog, id) -> {
+                        ListView lv = ((AlertDialog) dialog).getListView();
+                        int itemPos = lv.getCheckedItemPosition();
+                        harrisSaRadioManager
+                                .setSelectedRadio(radios.get(itemPos));
+                        t = new Thread(ControllerPppd.this);
+                        cancelled = false;
+                        t.start();
+                    })
+                    .setNegativeButton(R.string.cancel, (dialog, which) -> {
+                        harrisSaRadioManager.setSelectedRadio(null);
+                        ControllerPppd.this.stop();
+                    });
+
+            ((Activity) context).runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    builder.show();
+                }
+            });
+        } else if (radios.size() == 0 && getGenericSerial() != null) {
+            harrisSaRadioManager.setSelectedRadio(null);
+            t = new Thread(this);
+            t.start();
+        } else {
+            stop();
+        }
+    }
 }

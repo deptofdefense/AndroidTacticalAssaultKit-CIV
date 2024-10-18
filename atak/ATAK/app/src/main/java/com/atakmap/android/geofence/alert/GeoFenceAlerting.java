@@ -224,7 +224,7 @@ public class GeoFenceAlerting {
         }
 
         Log.d(TAG, "Alerting " + items.size() + " items, for monitor: "
-                + monitor.toString());
+                + monitor);
 
         //track list of alerts...
         if (bAutoDismiss) {

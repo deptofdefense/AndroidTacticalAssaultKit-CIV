@@ -18,10 +18,8 @@ import java.util.Set;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import com.atakmap.android.contact.Contact;
@@ -55,8 +53,6 @@ public class ChatDatabase {
     static final String TABLE_CHAT = "Chat";
     static final String TABLE_GROUPS = "Groups";
     static final String ARRAY_DELIMITER = ",";
-
-    private final SharedPreferences chatPrefs;
 
     private static class DBColumn {
         public String key;
@@ -187,11 +183,6 @@ public class ChatDatabase {
     }
 
     private ChatDatabase() {
-
-        chatPrefs = PreferenceManager.getDefaultSharedPreferences(MapView
-                .getMapView().getContext());
-        // TODO: After testing - migrate this over to mirror how StateSaver
-        // performs a lazy open/wrap of the database.
 
         initDatabase();
 

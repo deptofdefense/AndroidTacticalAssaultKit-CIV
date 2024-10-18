@@ -4,6 +4,7 @@
 #include <string>
 #include <set>
 #include "db/Database.h"
+#include "db/Database2.h"
 #include "util/NonCopyable.h"
 #include "port/Platform.h"
 #include "util/NonCopyable.h"
@@ -19,6 +20,7 @@ namespace atakmap {
                 const std::string& getOSMDroidSqliteTilesTableName() const;
                 const std::set<std::string>& getOSMDroidSqliteTilesTableColumns() const;
                 bool isOSMDroidSQLite(db::Database &database) const;
+                static bool isOSMDroidSQLite(TAK::Engine::DB::Database2 &database);
 
                 // next 4 derived from
                 // http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#X_and_Y

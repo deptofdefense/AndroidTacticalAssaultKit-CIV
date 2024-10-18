@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/hint"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:gravity="center_horizontal"
+            android:text="Related Files" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="No attached files"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Tap to add"/>
+    </LinearLayout>
+
+    <GridView
+        android:id="@+id/related"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:numColumns="3"
+        android:paddingBottom="36dp"
+        android:clipToPadding="false"
+        android:visibility="visible" />
+
+    <LinearLayout
+        android:id="@+id/actions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_gravity="right"
+        android:orientation="horizontal">
+        <ImageButton
+            android:id="@+id/remove_related"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:padding="@dimen/auto_margin"
+            android:src="@drawable/ic_edit"
+            style="@style/darkButton"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ms_actions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_gravity="right"
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <ImageButton
+            android:id="@+id/ms_cancel"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:padding="@dimen/auto_margin"
+            android:src="@drawable/ic_delete"
+            style="@style/darkButton"/>
+        <ImageButton
+            android:id="@+id/ms_delete"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:padding="@dimen/auto_margin"
+            android:src="@drawable/ic_menu_delete"
+            style="@style/darkButton"/>
+        <ImageButton
+            android:id="@+id/ms_add"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:padding="@dimen/auto_margin"
+            android:src="@drawable/ic_menu_plus"
+            style="@style/darkButton"/>
+    </LinearLayout>
+</RelativeLayout>

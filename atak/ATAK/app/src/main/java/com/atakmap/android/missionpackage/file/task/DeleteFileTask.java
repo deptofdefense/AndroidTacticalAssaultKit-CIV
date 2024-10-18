@@ -33,7 +33,7 @@ public class DeleteFileTask extends MissionPackageBaseTask {
         Thread.currentThread().setName("DeleteFileTask");
 
         // work to be performed by background thread
-        Log.d(TAG, "Executing: " + toString());
+        Log.d(TAG, "Executing: " + this);
 
         File source = new File(_manifest.getPath());
         if (!FileSystemUtils.isFile(source)) {

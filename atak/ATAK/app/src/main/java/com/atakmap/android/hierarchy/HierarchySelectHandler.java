@@ -30,7 +30,7 @@ public class HierarchySelectHandler {
      * @param handler Handler to register
      */
     public static void register(Class<?> clazz,
-                                HierarchyListUserSelect handler) {
+            HierarchyListUserSelect handler) {
         register(clazz.getName(), handler);
     }
 
@@ -59,7 +59,7 @@ public class HierarchySelectHandler {
      * @param handler Handler to unregister
      */
     public static void unregister(String clazz,
-                                  HierarchyListUserSelect handler) {
+            HierarchyListUserSelect handler) {
         synchronized (handlers) {
             HierarchyListUserSelect existing = handlers.get(clazz);
             if (handler == existing)
@@ -74,7 +74,7 @@ public class HierarchySelectHandler {
      * @param handler Handler to unregister
      */
     public static void unregister(Class<?> clazz,
-                                  HierarchyListUserSelect handler) {
+            HierarchyListUserSelect handler) {
         unregister(clazz.getName(), handler);
     }
 

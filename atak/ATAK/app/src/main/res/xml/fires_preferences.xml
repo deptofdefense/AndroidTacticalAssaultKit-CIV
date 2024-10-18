@@ -3,20 +3,20 @@
     <PreferenceCategory
         android:key="fire_prefs_category"
         android:title="@string/civ_fires_prefs">
-        <com.atakmap.android.gui.PanEditTextPreference 
+        <com.atakmap.android.gui.PanEditTextPreference
             android:title="@string/civ_spi_update_delay"
-            android:key="spiUpdateDelay" 
+            android:key="spiUpdateDelay"
             android:inputType="number"
             android:summary="@string/civ_spi_update_delay_summary"
             android:defaultValue="5" />
-        <ListPreference
+        <com.atakmap.android.gui.PanListPreference
             android:title="@string/hostileUpdatePreferences"
             android:key="hostileUpdateDelay"
             android:entryValues="@array/autobroadcast_update"
             android:entries="@array/autobroadcast_update"
             android:summary="@string/hostileUpdateSummary"
             android:defaultValue="60" />
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/legacy_toolbar_mode"
             android:summary="@string/summary_legacy_toolbar_mode"
             android:key="legacyFiresToolbarMode"
@@ -36,12 +36,11 @@
             android:summary="@string/civ_spi_redx_fah_summary"
             android:defaultValue="30" />
 
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/expand_danger_close_title"
             android:summary="@string/expand_danger_close_summary"
             android:key="expandedDangerClose"
             android:defaultValue="false" />
     </PreferenceCategory>
 
-      
 </PreferenceScreen>

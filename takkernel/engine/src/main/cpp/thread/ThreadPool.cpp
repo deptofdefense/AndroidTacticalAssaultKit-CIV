@@ -1,5 +1,7 @@
 #include "thread/ThreadPool.h"
 
+#include <vector>
+
 #include "util/Memory.h"
 
 using namespace TAK::Engine::Thread;
@@ -48,7 +50,7 @@ TAKErr ThreadPool::joinAll() NOTHROWS
     threads.clear();
     return TE_Ok;
 }
-TAKErr ThreadPool::initPool(const std::size_t threadCount, void *(*entry)(void *), void* threadData) NOTHROWS
+TAKErr ThreadPool::initPool(const std::size_t threadCount, void *(*entry)(void *), void **threadData) NOTHROWS
 {
     TAKErr code(TE_Ok);
     Lock lock(threadsMutex);
@@ -60,7 +62,7 @@ TAKErr ThreadPool::initPool(const std::size_t threadCount, void *(*entry)(void *
 
     for (std::size_t i = 0u; i < threadCount; ++i){
         ThreadPtr thread(nullptr, nullptr);
-        code = Thread_start(thread, entry, threadData);
+        code = Thread_start(thread, entry, threadData ? threadData[i] : nullptr);
         TE_CHECKBREAK_CODE(code);
         threads.insert(std::move(thread));
     }
@@ -71,9 +73,21 @@ TAKErr ThreadPool::initPool(const std::size_t threadCount, void *(*entry)(void *
     return code;
 }
 
-TAKErr TAK::Engine::Thread::ThreadPool_create(ThreadPoolPtr &value, const std::size_t threadCount, void *(*entry)(void *), void* threadData) NOTHROWS
+TAKErr TAK::Engine::Thread::ThreadPool_create(ThreadPoolPtr &value, const std::size_t threadCount, void *(*entry)(void *), void *data) NOTHROWS
+{
+    if (!threadCount)
+        return TE_InvalidArg;
+    std::vector<void*> threadData;
+    threadData.reserve(threadCount);
+    for (std::size_t i = 0u; i < threadCount; i++)
+        threadData.push_back(data);
+    return ThreadPool_create(value, threadCount, entry, &threadData.at(0));
+}
+TAKErr TAK::Engine::Thread::ThreadPool_create(ThreadPoolPtr &value, const std::size_t threadCount, void *(*entry)(void *), void **threadData) NOTHROWS
 {
     TAKErr code(TE_Ok);
+    if (!threadCount)
+        return TE_InvalidArg;
     ThreadPoolPtr pool(new ThreadPool(), Memory_deleter_const<ThreadPool>);
     code = pool->initPool(threadCount, entry, threadData);
     TE_CHECKRETURN_CODE(code);

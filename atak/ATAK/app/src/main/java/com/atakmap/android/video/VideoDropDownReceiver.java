@@ -1417,7 +1417,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 }
             }
 
-            String pathToRecordLocation = vidDir.toString()
+            String pathToRecordLocation = vidDir
                     + File.separator
                     + vmd.connectionEntry.getAlias()
                     + "_"

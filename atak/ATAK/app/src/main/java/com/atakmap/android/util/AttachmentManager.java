@@ -1,46 +1,42 @@
 
 package com.atakmap.android.util;
 
-import com.atakmap.os.FileObserver;
-import com.atakmap.android.filesystem.MIMETypeMapper;
-import com.atakmap.android.importfiles.task.ImportFileTask;
-import com.atakmap.android.importfiles.task.ImportFilesTask;
-import com.atakmap.android.maps.MapGroup;
-import com.atakmap.android.missionpackage.MissionPackageMapComponent;
-import com.atakmap.android.attachment.AttachmentBroadcastReceiver;
-import com.atakmap.android.image.ImageDropDownReceiver;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.app.R;
-
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
 import android.view.View;
-import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.MapView;
 import android.widget.ImageButton;
 
-import java.io.IOException;
+import com.atakmap.android.attachment.AttachmentBroadcastReceiver;
+import com.atakmap.android.contact.ContactPresenceDropdown;
+import com.atakmap.android.filesystem.MIMETypeMapper;
+import com.atakmap.android.image.ImageDropDownReceiver;
+import com.atakmap.android.image.ImageGalleryReceiver;
+import com.atakmap.android.importfiles.task.ImportFileTask;
+import com.atakmap.android.importfiles.task.ImportFilesTask;
+import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.maps.MapView;
+import com.atakmap.android.missionpackage.MissionPackageMapComponent;
+import com.atakmap.android.tools.AtakLayerDrawableUtil;
+import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.log.Log;
+import com.atakmap.os.FileObserver;
+
 import java.io.File;
 import java.io.FilenameFilter;
-
-import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.log.Log;
-
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-
-import android.content.Intent;
-import android.content.Context;
-import com.atakmap.android.image.ImageGalleryReceiver;
-import com.atakmap.coremap.locale.LocaleUtil;
-import com.atakmap.android.tools.AtakLayerDrawableUtil;
-import com.atakmap.android.contact.ContactPresenceDropdown;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.graphics.drawable.LayerDrawable;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -76,11 +72,18 @@ public class AttachmentManager {
         });
     }
 
+    /**
+     * Sets the current Attachment Manager instance with the map item.
+     * @param mi the new map item to use with the attachment manager.
+     */
     public void setMapItem(MapItem mi) {
         _prevAttachments = -1;
         this.mapItem = mi;
         if (fObserver != null)
             fObserver.stopWatching();
+
+        if (this.mapItem == null)
+            return;
 
         fObserver = new FileObserver(
                 getFolderPath(this.mapItem.getUID(), true)) {
@@ -97,6 +100,9 @@ public class AttachmentManager {
         refresh();
     }
 
+    /**
+     * Updates the current button for the attachment.
+     */
     public void refresh() {
         boolean enabled = !MapItem.EMPTY_TYPE.equals(mapItem.getType());
         _attachmentsButton.setEnabled(enabled);
@@ -405,6 +411,10 @@ public class AttachmentManager {
         @Override
         public boolean accept(File dir, String filename) {
             String fn = filename.toLowerCase(LocaleUtil.getCurrent());
+            File f = new File(dir, filename);
+            if (IOProviderFactory.isDirectory(f))
+                return false;
+            
             return !(fn.endsWith(".lnk") || fn.endsWith(".aux.xml"));
         }
     };
@@ -520,7 +530,7 @@ public class AttachmentManager {
 
             // TODO: Resource string conversion; remove ugly concatenation
             AlertDialog.Builder b = new AlertDialog.Builder(ctx);
-            b.setTitle("Import File");
+            b.setTitle(R.string.import_file);
             b.setMessage("Import '" + file.getName() + "' into "
                     + ctx.getString(R.string.app_name)
                     + " or open with external viewer?");

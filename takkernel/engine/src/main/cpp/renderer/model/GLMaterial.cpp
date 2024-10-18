@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include <memory>
 #include "renderer/model/GLMaterial.h"
 #include "renderer/GLWorkers.h"
@@ -136,3 +137,4 @@ bool GLMaterial::isLoading() const NOTHROWS
     } while (false);
     return false;
 }
+#endif

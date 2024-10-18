@@ -64,7 +64,7 @@ public class MissionPackageShapefileHandler implements
 
         if (group.getManifest().hasFile(content)) {
             Log.i(TAG,
-                    group.toString() + " already contains filename: "
+                    group + " already contains filename: "
                             + file.getName());
             Toast.makeText(_context, _context.getString(
                     R.string.mission_package_already_contains_file,
@@ -113,7 +113,7 @@ public class MissionPackageShapefileHandler implements
 
             if (group.getManifest().hasFile(dataSetContent)) {
                 Log.i(TAG,
-                        group.toString() + " already contains filename: "
+                        group + " already contains filename: "
                                 + datasetFile.getName());
                 continue;
             }
@@ -167,7 +167,7 @@ public class MissionPackageShapefileHandler implements
         }
 
         if (manifest.hasFile(content)) {
-            Log.i(TAG, manifest.toString() + " already contains filename: "
+            Log.i(TAG, manifest + " already contains filename: "
                     + file.getName());
             return false;
         }
@@ -212,7 +212,7 @@ public class MissionPackageShapefileHandler implements
                     ShapefileSpatialDb.SHP_CONTENT_TYPE);
 
             if (manifest.hasFile(dataSetContent)) {
-                Log.i(TAG, manifest.toString() + " already contains filename: "
+                Log.i(TAG, manifest + " already contains filename: "
                         + datasetFile.getName());
                 continue;
             }
@@ -255,7 +255,7 @@ public class MissionPackageShapefileHandler implements
         }
 
         // remove .shp
-        Log.d(TAG, "Removing item: " + item.toString());
+        Log.d(TAG, "Removing item: " + item);
         if (!group.removeFile(item))
             return false;
 
@@ -284,11 +284,11 @@ public class MissionPackageShapefileHandler implements
             if (p == null || !p.isValid()) {
                 Log.w(TAG,
                         "Unable to remove referenced content with no local path: "
-                                + reference.toString());
+                                + reference);
                 continue;
             }
 
-            Log.d(TAG, "Removing referenced content: " + reference.toString());
+            Log.d(TAG, "Removing referenced content: " + reference);
             group.removeFile(MissionPackageManifestAdapter.FileContentToUI(
                     reference,
                     new File(p.getValue())));
@@ -322,7 +322,7 @@ public class MissionPackageShapefileHandler implements
         }
 
         // extract .shp file
-        Log.d(TAG, "Exracting file: " + content.toString());
+        Log.d(TAG, "Exracting file: " + content);
         String parent = MissionPackageFileIO
                 .getMissionPackageFilesPath(atakDataDir
                         .getAbsolutePath())

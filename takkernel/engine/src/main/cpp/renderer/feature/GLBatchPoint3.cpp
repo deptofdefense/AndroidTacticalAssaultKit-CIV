@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/GL.h"
 
 #include "renderer/feature/GLBatchPoint3.h"
@@ -62,6 +63,7 @@ GLBatchPoint3::GLBatchPoint3(RenderContext &surface) :
     screen_x(0),
     screen_y(0),
     altitude(NAN),
+    terrainEl(NAN),
     posProjectedEl(NAN),
     posProjectedSrid(-1),
     surfaceProjectedSrid(-1),
@@ -603,45 +605,38 @@ bool GLBatchPoint3::validateProjectedLocation(const GLGlobeBase &view) NOTHROWS
 
     // RWI - TODO need to use this->altitude
     GeoPoint2 scratchGeo(this->latitude, this->longitude);
-
-    // Z/altitude
-    bool belowTerrain = false;
-    double posEl = 0.0;
-    if (view.renderPass->drawTilt > 0.0) {
-        // XXX - altitude
-        double alt = this->altitude;
-        double terrain;
-        view.getTerrainMeshElevation(&terrain, this->latitude, this->longitude);
-        if (isnan(alt) || this->altitudeMode == TEAM_ClampToGround) {
-            alt = terrain;
-        } else if (this->altitudeMode == TEAM_Relative) {
-            alt += terrain;
-        } else if (alt < terrain) {
-            // if the explicitly specified altitude is below the terrain,
-            // float above and annotate appropriately
-            belowTerrain = true;
-            alt = terrain;
-        }
-
-        // note: always NaN if source alt is NaN
-        double adjustedAlt = alt * view.elevationScaleFactor;
-
-        // move up half icon height
-        if (this->textureKey != 0L) {
-            std::size_t iconH;
-            iconAtlas->getImageHeight(&iconH, this->textureKey);
-            if (isnan(adjustedAlt))
-                adjustedAlt = 0;
-            adjustedAlt += view.renderPass->drawMapResolution*((double)iconH / 2.0);
-        }
-
-        // move up ~5 pixels from surface
-        adjustedAlt += view.renderPass->drawMapResolution * 10.0;
-
-        scratchGeo.altitude = adjustedAlt;
-        scratchGeo.altitudeRef = AltitudeReference::HAE;
-        posEl = isnan(adjustedAlt) ? 0.0 : adjustedAlt;
+    
+    // XXX - altitude
+    double alt = this->altitude;
+    view.getTerrainMeshElevation(&this->terrainEl, this->latitude, this->longitude);
+    if (isnan(alt) || this->altitudeMode == TEAM_ClampToGround) {
+        alt = this->terrainEl;
+    } else if (this->altitudeMode == TEAM_Relative) {
+        alt += this->terrainEl;
+    } else if (alt < this->terrainEl) {
+        // if the explicitly specified altitude is below the terrain,
+        // float above and annotate appropriately
+        alt = this->terrainEl;
     }
+
+    // note: always NaN if source alt is NaN
+    double adjustedAlt = alt * view.elevationScaleFactor;
+
+    // move up half icon height
+    if (this->textureKey != 0L) {
+        std::size_t iconH;
+        iconAtlas->getImageHeight(&iconH, this->textureKey);
+        if (isnan(adjustedAlt))
+            adjustedAlt = 0;
+        adjustedAlt += view.renderPass->drawMapResolution*((double)iconH / 2.0);
+    }
+
+    // move up ~5 pixels from surface
+    adjustedAlt += view.renderPass->drawMapResolution * 10.0;
+
+    scratchGeo.altitude = adjustedAlt;
+    scratchGeo.altitudeRef = AltitudeReference::HAE;
+    double posEl = isnan(adjustedAlt) ? 0.0 : adjustedAlt;
 
     if (posProjectedEl != posEl || posProjectedSrid != view.renderPass->drawSrid || terrainVersion != view.getTerrainVersion()) {
         view.renderPass->scene.projection->forward(&posProjected, scratchGeo);
@@ -1043,3 +1038,4 @@ namespace
         return (float)settleDelta / 1000.0f;
     }
 }
+#endif

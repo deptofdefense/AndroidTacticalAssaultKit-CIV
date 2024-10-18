@@ -2,7 +2,7 @@
 <PreferenceScreen
   xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="@string/trackHistoryPreferences">
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:summary="@string/log_tracks_summ"
             android:enabled="true"
             android:defaultValue="true"
@@ -13,22 +13,22 @@
             android:key="track_prefix"
             android:summary="@string/self_track_prefix_summ"
             android:defaultValue="track_" />
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:summary="@string/toggle_rot_trackcolors_summ"
             android:enabled="true"
             android:defaultValue="true"
             android:key="toggle_rotate_track_colors"
             android:title="@string/toggle_rot_trackcolors_title"/>
-        <Preference
+       <Preference
             android:key="track_history_default_color"
             android:title="@string/default_color_title" />
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:summary="@string/csv_Export_Header_summ"
             android:enabled="true"
             android:defaultValue="true"
             android:key="track_csv_export_headers"
             android:title="@string/csv_Export_Header_title"/>
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:summary="@string/kml_export_timestaps_summ"
             android:defaultValue="false"
             android:key="track_kml_export_timestamps"
@@ -41,28 +41,28 @@
             android:defaultValue="10"/>
    </PreferenceCategory>
    <PreferenceCategory  android:title="@string/breadcrumbPreferences">
-       <CheckBoxPreference
+       <com.atakmap.android.gui.PanCheckBoxPreference
            android:summary="@string/pers_self_track_summ"
            android:defaultValue="false"
            android:key="track_infinite"
            android:title="@string/pers_self_track_title"/>
 
        <com.atakmap.android.track.ui.SeekBarPreference
-            android:summary="@string/max_num_of_crumbs_summ"
-            android:key="max_num_bread_tracks"
-            android:title="@string/set_max_num_of_crumbs_title"
-            android:text="@string/set_max_num_of_crumbs_title"
-            android:defaultValue="200"
-            android:max="500"/>
+           android:summary="@string/max_num_of_crumbs_summ"
+           android:key="max_num_bread_tracks"
+           android:title="@string/set_max_num_of_crumbs_title"
+           android:text="@string/set_max_num_of_crumbs_title"
+           android:defaultValue="200"
+           android:max="500"/>
 
-       <CheckBoxPreference
+       <com.atakmap.android.gui.PanCheckBoxPreference
            android:title="Render bread crumb line to ground in 3-D"
            android:defaultValue="false"
            android:key="track_line_to_surface"
-           android:summary="When rendering the bread crumb trail in 3-D view, draw a line to the ground for each crumb"/>
+           android:summary="When rendering the bread crumb trail in 3-D view, draw a line to the ground for each crumb."/>/>
 
 
-       <ListPreference
+       <com.atakmap.android.gui.PanListPreference
            android:entries="@array/crumb_size"
            android:entryValues="@array/crumb_size_value"
            android:key="track_crumb_size"
@@ -71,10 +71,10 @@
            android:defaultValue="10"/>
 
        <com.atakmap.android.gui.PanEditTextPreference
-            android:summary="@string/set_bread_crumb_dist_summ"
-            android:key="bread_dist_threshold"
-            android:title="@string/set_bread_crumb_dist_title"
-            android:inputType = "number"
-            android:defaultValue="2"/>
+           android:summary="@string/set_bread_crumb_dist_summ"
+           android:key="bread_dist_threshold"
+           android:title="@string/set_bread_crumb_dist_title"
+           android:inputType = "number"
+           android:defaultValue="2"/>
     </PreferenceCategory>
 </PreferenceScreen>

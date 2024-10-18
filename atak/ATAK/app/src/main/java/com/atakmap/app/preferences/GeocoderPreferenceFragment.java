@@ -3,6 +3,7 @@ package com.atakmap.app.preferences;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
@@ -19,8 +20,6 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.xml.XMLUtils;
 
-import android.content.Context;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -34,11 +33,10 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
- *
  * TODO: move under the user.geocode package.
- *       augment the external file to look like this (inclusion of a type and url):
- * 
- *     suppliers.put("MapQuest", "type=nomination,url=http://open.mapquestapi.com/nominatim/v1/");
+ * augment the external file to look like this (inclusion of a type and url):
+ * <p>
+ * suppliers.put("MapQuest", "type=nomination,url=http://open.mapquestapi.com/nominatim/v1/");
  */
 public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
 

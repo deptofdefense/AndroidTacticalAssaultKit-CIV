@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <Preference android:title="@string/app_mgmt_text1"
-                android:key="appsPref"
-                android:summary="@string/preferences_text341"
-                android:icon="@drawable/settings_menu_apps"/>
         <PreferenceCategory
              android:title="@string/toolsPreferences">
-
+           <Preference android:title="@string/package_mgmt_tool"
+                android:key="appsPref"/>
+           <Preference
+                android:title="@string/spec_tool_pref"
+                android:key="specTools"/>
         </PreferenceCategory>
 </PreferenceScreen>

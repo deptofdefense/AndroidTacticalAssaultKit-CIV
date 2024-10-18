@@ -101,19 +101,21 @@ public final class Doghouse extends Polyline implements
     public void setVisible(boolean visible) {
         //if the current "new" state of the map item is now visible then we must
         //check to associated route visibility
-        if(visible){
+        if (visible) {
             //make sure we have the routeUid set inside metadata
-            if(getMetaString("routeUID",null) != null){
-                MapItem item = RouteMapReceiver.getInstance().getRouteGroup().findItem("uid",getMetaString("routeUID",""));
+            if (getMetaString("routeUID", null) != null) {
+                MapItem item = RouteMapReceiver.getInstance().getRouteGroup()
+                        .findItem("uid", getMetaString("routeUID", ""));
 
                 //make sure its a route and if the route is not visible then dont call super() for updating the map item
                 //in this case the doghouse map items visibility to show, if the route is visible then we just call the super()
                 //which updates the map item to true/false
-                if(item instanceof Route && !item.getVisible()){
+                if (item instanceof Route && !item.getVisible()) {
                     return;
                 }
-            }else{
-                Log.w("Doghouse","Warning Doghouse is missing RouteUID metadata this shouldnt happen");
+            } else {
+                Log.w("Doghouse",
+                        "Warning Doghouse is missing RouteUID metadata this shouldnt happen");
             }
         }
         super.setVisible(visible);
@@ -517,7 +519,8 @@ public final class Doghouse extends Polyline implements
         } else if (_northReference == NorthReference.TRUE) {
             bearing = _bearingToNext;
         } else {
-            double gridConvergence = ATAKUtilities.computeGridConvergence(_source.get(),
+            double gridConvergence = ATAKUtilities.computeGridConvergence(
+                    _source.get(),
                     _target.get());
             bearing = AngleUtilities.wrapDeg(_bearingToNext - gridConvergence);
         }

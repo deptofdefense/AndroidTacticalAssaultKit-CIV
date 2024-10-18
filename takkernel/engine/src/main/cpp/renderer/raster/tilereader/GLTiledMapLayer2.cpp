@@ -1,6 +1,10 @@
+#ifdef MSVC
 #include "renderer/raster/tilereader/GLTiledMapLayer2.h"
 
 #include <algorithm>
+
+#include "renderer/raster/tilereader/GLQuadTileNode2.h"
+#include "renderer/raster/tilereader/GLQuadTileNode3.h"
 #include "util/MathUtils.h"
 
 using namespace TAK::Engine::Renderer::Raster::TileReader;
@@ -13,6 +17,8 @@ using namespace TAK::Engine::Raster::TileReader;
 using namespace TAK::Engine::Renderer::Core;
 
 using atakmap::math::Rectangle;
+
+#define GLQuadTileNodeImpl GLQuadTileNode3
 
 namespace {
 
@@ -119,8 +125,6 @@ namespace {
         return code;
     }
 
-
-
     struct PrefetchedInitializer : public GLQuadTileNode2::Initializer
     {
     public :
@@ -148,7 +152,7 @@ namespace {
 
 class GLTiledMapLayer2::ColorControlImpl : TAK::Engine::Renderer::Core::ColorControl {
    private:
-    GLQuadTileNode2 *impl_;
+    GLQuadTileNodeImpl *impl_;
     TAK::Engine::Core::RenderContext *renderer_;
 
    public:
@@ -164,7 +168,7 @@ class GLTiledMapLayer2::ColorControlImpl : TAK::Engine::Renderer::Core::ColorCon
         }
     };
 
-    ColorControlImpl(GLQuadTileNode2 *impl, TAK::Engine::Core::RenderContext *renderer) NOTHROWS : impl_(impl), renderer_(renderer) {}
+    ColorControlImpl(GLQuadTileNodeImpl *impl, TAK::Engine::Core::RenderContext *renderer) NOTHROWS : impl_(impl), renderer_(renderer) {}
     ~ColorControlImpl() NOTHROWS override = default;
 
     TAK::Engine::Util::TAKErr setColor(const Mode mode, const unsigned int color) NOTHROWS override {
@@ -259,9 +263,9 @@ void GLTiledMapLayer2::draw(const GLGlobeBase& view, const int renderPass) NOTHR
             nodeOpts.textureBorrowEnabled = true;
 
             PrefetchedInitializer init(reader);
-            GLQuadTileNode2::create(impl, &view.context, &info, readerOpts, nodeOpts, init);
+            GLQuadTileNodeImpl::create(impl, view.context, info, readerOpts, nodeOpts, init);
         }
-        color_control_ = std::make_unique<ColorControlImpl>(impl.get(), &view.context);
+        color_control_ = std::make_unique<ColorControlImpl>(static_cast<GLQuadTileNodeImpl *>(impl.get()), &view.context);
         this->controls_["TAK.Engine.Renderer.Core.ColorControl"] = this->color_control_.get();
         initialized = true;
     }
@@ -328,3 +332,4 @@ TAKErr TAK::Engine::Renderer::Raster::TileReader::GLTiledMapLayer2_getRasterROI2
     return TE_Ok;
 }
 
+#endif

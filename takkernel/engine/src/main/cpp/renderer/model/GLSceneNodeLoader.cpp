@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/model/GLSceneNodeLoader.h"
 
 #include <algorithm>
@@ -231,3 +232,4 @@ void GLSceneNodeLoader::threadImpl()
         }
     }
 }
+#endif

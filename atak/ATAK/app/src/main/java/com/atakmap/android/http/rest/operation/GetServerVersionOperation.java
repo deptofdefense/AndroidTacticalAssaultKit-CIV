@@ -56,6 +56,13 @@ public class GetServerVersionOperation extends HTTPOperation {
         return queryRequest(queryRequest);
     }
 
+    /**
+     * Give a server version request, perform the query and return the corresponding bundle containing
+     * a PARAM_RESPONSE
+     * @param queryRequest the query request to use
+     * @return the bundle containing the PARAM_RESPONSE
+     * @throws ConnectionException a connection exception if the query fails
+     */
     public static Bundle queryRequest(
             GetServerVersionRequest queryRequest)
             throws ConnectionException {

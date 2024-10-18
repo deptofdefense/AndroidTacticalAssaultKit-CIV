@@ -37,18 +37,19 @@ namespace TAK {
                  *
                  * @param threadCount   The number of threads in the pool
                  * @param entry         The entry function pointer
-                 * @param threadData    The data passed to the entry function
+                 * @param threadData    The data passed to the entry function, one for each thread
                  *
                  * @return  TE_Ok on success, various codes on failure
                  */
-				TAK::Engine::Util::TAKErr initPool(const std::size_t threadCount, void *(*entry)(void *), void* threadData) NOTHROWS;
+				TAK::Engine::Util::TAKErr initPool(const std::size_t threadCount, void *(*entry)(void *), void **threadData) NOTHROWS;
             private :
-                friend ENGINE_API Util::TAKErr ThreadPool_create(std::unique_ptr<ThreadPool, void(*)(const ThreadPool *)> &, const std::size_t, void *(*entry)(void *), void*) NOTHROWS;;
+                friend ENGINE_API Util::TAKErr ThreadPool_create(std::unique_ptr<ThreadPool, void(*)(const ThreadPool *)> &, const std::size_t, void *(*entry)(void *), void**) NOTHROWS;;
 			}; // Close Class ThreadPool
 
             typedef std::unique_ptr<ThreadPool, void(*)(const ThreadPool *)> ThreadPoolPtr;
 
-            ENGINE_API Util::TAKErr ThreadPool_create(ThreadPoolPtr &value, const std::size_t threadCount, void *(*entry)(void *), void* threadData) NOTHROWS;
+            ENGINE_API Util::TAKErr ThreadPool_create(ThreadPoolPtr &value, const std::size_t threadCount, void *(*entry)(void *), void *threadData) NOTHROWS;
+            ENGINE_API Util::TAKErr ThreadPool_create(ThreadPoolPtr &value, const std::size_t threadCount, void *(*entry)(void *), void ** threadData) NOTHROWS;
 			
 		} // Close Namespace Thread
 	} // Close Namespace Engine

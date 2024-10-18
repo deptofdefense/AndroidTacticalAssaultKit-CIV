@@ -66,14 +66,10 @@ public :
 private :
     void setDefaultFocusPoint(const atakmap::math::Point<float> *defaultFocus);
 
-    void dispatchFocusPointChanged();
-    atakmap::math::Point<float> getFocusPointInternal() const;
+    void dispatchFocusPointChanged(const atakmap::math::Point<float> &focus);
 private :
     AtakMapView *mapView;
-    atakmap::math::Point<float> defaultFocusPoint;
-    atakmap::math::Point<float> focusPointOffset;
     std::set<MapControllerFocusPointChangedListener *> focusChangedListeners;
-    std::stack<atakmap::math::Point<float>> focusPointQueue;
 
     TAK::Engine::Thread::Mutex controllerMutex;
 

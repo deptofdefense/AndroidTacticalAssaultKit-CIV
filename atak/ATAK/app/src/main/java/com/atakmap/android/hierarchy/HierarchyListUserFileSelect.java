@@ -110,7 +110,7 @@ public class HierarchyListUserFileSelect extends HierarchyListUserSelect {
                 } else {
                     Log.w(TAG,
                             "Failed to get filepath for GRG: "
-                                    + item.toString());
+                                    + item);
                 }
             } else if ((ex = item.getAction(Export.class)) != null) {
                 // Utilize mission package export wrapper for finding items
@@ -136,7 +136,7 @@ public class HierarchyListUserFileSelect extends HierarchyListUserSelect {
                         }
                     }
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to export: " + item.toString(), e);
+                    Log.w(TAG, "Failed to export: " + item, e);
                 }
             } else if ((userObj = item.getUserObject()) != null
                     && userObj instanceof MissionPackageListGroup) {

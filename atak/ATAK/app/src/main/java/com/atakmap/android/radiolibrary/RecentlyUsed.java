@@ -192,7 +192,7 @@ public class RecentlyUsed {
                         con,
                         String.format(con
                                 .getString(R.string.radio_changing_connection),
-                                c.toString()),
+                                c),
                         Toast.LENGTH_SHORT)
                         .show();
             }

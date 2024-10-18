@@ -81,7 +81,7 @@ public class ExportGRGTask extends ExportFileTask {
         }
         String docSkel = String.format(LocaleUtil.getCurrent(), DOC_KML,
                 CotEvent.escapeXmlText(name),
-                CotEvent.escapeXmlText(img.getName()), cs.toString());
+                CotEvent.escapeXmlText(img.getName()), cs);
         writeToFile(new File(tmpDir, "doc.kml"), docSkel);
 
         if (isCancelled())

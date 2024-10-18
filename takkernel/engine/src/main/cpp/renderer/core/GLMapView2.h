@@ -91,6 +91,7 @@ namespace TAK
                     virtual Util::TAKErr start() NOTHROWS override;
                     virtual Util::TAKErr stop() NOTHROWS override;
                     virtual void render() NOTHROWS override;
+                    virtual Util::TAKErr lookAt(const TAK::Engine::Core::GeoPoint2 &at, const double resolution, const double azimuth, const double tilt, const TAK::Engine::Core::MapRenderer::CameraCollision collision, const bool animate) NOTHROWS override;
                     /**
                      * Invokes `relesae()` on all renderables; subsequent call
                      * to `render()` will force per-renderable

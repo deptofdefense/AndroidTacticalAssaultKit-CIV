@@ -157,8 +157,7 @@ public class ImageDropDownReceiver
     //  PUBLIC METHODS
     //==================================
 
-
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public ImageDropDownReceiver(MapView mapView) {
         super(mapView);
         _mapView = mapView;

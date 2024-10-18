@@ -95,7 +95,7 @@ public class ErrorLogsClient implements RequestManager.RequestListener {
             // notify user
             Log.d(TAG,
                     "Error log post request created for: "
-                            + request.toString());
+                            + request);
 
             if (!background) {
                 NotificationUtil

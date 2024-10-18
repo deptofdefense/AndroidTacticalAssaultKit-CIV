@@ -301,7 +301,7 @@ public class PinchImageViewWrapper implements OnTouchListener,
         }
 
         sb.append("]");
-        Log.d(TAG, "Touch Events ---------\n" + sb.toString());
+        Log.d(TAG, "Touch Events ---------\n" + sb);
     }
 
 }

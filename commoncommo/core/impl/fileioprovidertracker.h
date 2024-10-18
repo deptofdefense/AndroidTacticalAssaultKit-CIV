@@ -53,7 +53,7 @@ private:
      *
      * @returns true iff the provider is found in the deque
      */
-    bool isProviderInTracker(const FileIOProvider& provider) const;
+    bool isProviderInTracker(const FileIOProvider& provider);
 
     /**
      * method which gets a deque iterator to a provider with the
@@ -64,7 +64,7 @@ private:
      * @returns the deque iterator to the provider,
      *   end if it doesn't exist
      */
-    std::deque<std::shared_ptr<FileIOProvider>>::const_iterator getProviderIter(const FileIOProvider& provider) const;
+    std::deque<std::shared_ptr<FileIOProvider>>::iterator getProviderIter(const FileIOProvider& provider);
 
 private:
     std::shared_ptr<PlainTextFileIOProvider> plaintextProvider;

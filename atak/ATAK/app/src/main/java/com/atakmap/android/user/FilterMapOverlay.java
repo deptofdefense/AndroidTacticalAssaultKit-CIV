@@ -584,7 +584,7 @@ public class FilterMapOverlay extends AbstractMapOverlay2
         if (parent != null)
             return;
 
-        Log.d(TAG, "Registering map listeners for " + toString());
+        Log.d(TAG, "Registering map listeners for " + this);
         final MapGroup _baseGroup = this.mapView.getRootGroup();
         MapGroup.deepMapItems(_baseGroup, new MapGroup.MapItemsCallback() {
 

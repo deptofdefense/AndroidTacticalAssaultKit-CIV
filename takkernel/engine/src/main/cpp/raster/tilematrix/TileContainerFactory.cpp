@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "raster/tilematrix/TileContainerFactory.h"
 #include "util/CopyOnWrite.h"
 #include "util/IO2.h"
@@ -203,3 +203,4 @@ namespace {
         return inst;
     }
 }
+#endif

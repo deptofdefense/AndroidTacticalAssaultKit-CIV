@@ -639,10 +639,12 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                         }
                     }
 
-                    double bearing = GeoCalculations.bearingTo(detectedPoint, _alert
-                            .getItem().getPoint());
+                    double bearing = GeoCalculations.bearingTo(detectedPoint,
+                            _alert
+                                    .getItem().getPoint());
 
-                    double distance = GeoCalculations.distanceTo(detectedPoint, _alert
+                    double distance = GeoCalculations.distanceTo(detectedPoint,
+                            _alert
                                     .getItem().getPoint());
                     String dirString = SpanUtilities.formatType(
                             Span.METRIC, distance, Span.METER)

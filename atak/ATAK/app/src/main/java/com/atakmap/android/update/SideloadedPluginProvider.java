@@ -59,7 +59,7 @@ public class SideloadedPluginProvider extends BaseProductProvider {
                 repoType,
                 repoIndex);
         if (repo != null && repo.isValid()) {
-            Log.d(TAG, "Updating sideloaded local repo: " + repo.toString());
+            Log.d(TAG, "Updating sideloaded local repo: " + repo);
             List<ProductInformation> plugins = new ArrayList<>();
             for (ProductInformation plugin : repo.getProducts()) {
                 SideloadedPluginInformation slp = new SideloadedPluginInformation(
@@ -162,7 +162,7 @@ public class SideloadedPluginProvider extends BaseProductProvider {
                                         } else {
                                             Log.w(TAG,
                                                     "Failed to convert plugin: "
-                                                            + plugin.toString());
+                                                            + plugin);
                                         }
                                     }
 
@@ -180,7 +180,7 @@ public class SideloadedPluginProvider extends BaseProductProvider {
         repo.setProducts(products);
 
         if (repo.isValid()) {
-            Log.d(TAG, "Updating local side loaded repo: " + repo.toString());
+            Log.d(TAG, "Updating local side loaded repo: " + repo);
             return repo;
         } else {
             Log.d(TAG, "Clearing local side loaded repo");
@@ -204,7 +204,7 @@ public class SideloadedPluginProvider extends BaseProductProvider {
 
         //already installed/sideloaded, just load plugin into ATAK
         if (!AtakPluginRegistry.get().loadPlugin(plugin.getPackageName())) {
-            Log.w(TAG, "Failed to load plugin: " + plugin.toString());
+            Log.w(TAG, "Failed to load plugin: " + plugin);
             return false;
         }
 
@@ -249,7 +249,7 @@ public class SideloadedPluginProvider extends BaseProductProvider {
                 return false;
             }
 
-            Log.d(TAG, toString() + ": installed added, " + pkg);
+            Log.d(TAG, this + ": installed added, " + pkg);
             final SideloadedPluginInformation product = new SideloadedPluginInformation(
                     this._cache, _context, plugin);
             if (!product.isValid()) {
@@ -272,7 +272,7 @@ public class SideloadedPluginProvider extends BaseProductProvider {
     public boolean uninstalled(String pkg) {
         //if we have it, remove from internal state, and save state out
         if (contains(pkg)) {
-            Log.d(TAG, toString() + ": uninstalled, " + pkg);
+            Log.d(TAG, this + ": uninstalled, " + pkg);
             if (_cache.removeProduct(pkg)) {
                 Log.d(TAG, "Uninstall Updated: " + pkg);
                 return _cache.save(FileSystemUtils

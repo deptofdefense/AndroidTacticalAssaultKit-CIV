@@ -36,14 +36,14 @@ std::shared_ptr<FileIOProvider> FileIOProviderTracker::getCurrentProvider() cons
     return currentProvider;
 }
 
-bool FileIOProviderTracker::isProviderInTracker(const FileIOProvider& provider) const{
+bool FileIOProviderTracker::isProviderInTracker(const FileIOProvider& provider) {
     return getProviderIter(provider) != providerDeque.end();
 }
 
-std::deque<std::shared_ptr<FileIOProvider>>::const_iterator FileIOProviderTracker::getProviderIter(const FileIOProvider& provider) const{
-    for(auto it = providerDeque.cbegin(); it != providerDeque.cend(); it++) {
+std::deque<std::shared_ptr<FileIOProvider>>::iterator FileIOProviderTracker::getProviderIter(const FileIOProvider& provider) {
+    for(std::deque<std::shared_ptr<FileIOProvider>>::iterator it = providerDeque.begin(); it != providerDeque.end(); it++) {
         if(&provider == (*it).get())
             return it;
     }
-    return providerDeque.cend();
+    return providerDeque.end();
 }

@@ -262,7 +262,7 @@ public class LRFReader extends BluetoothReader {
         for (int i = 0; i < Math.min(len, bytes.length); ++i) {
             sb.append(String.format("%02X ", bytes[i]));
         }
-        Log.d(TAG, "Buffer [size=" + bytes.length + "] " + sb.toString());
+        Log.d(TAG, "Buffer [size=" + bytes.length + "] " + sb);
     }
 
     protected float[] parseData(byte[] data) {

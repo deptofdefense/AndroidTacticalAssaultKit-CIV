@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "feature/OGDISchemaDefinition.h"
 
 #include <memory>
@@ -65,4 +66,4 @@ bool OGDISchemaDefinition::matches(const char* filePath, const OGRFeatureDefn&) 
 
 	return true;
 }
-
+#endif

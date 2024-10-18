@@ -73,11 +73,11 @@ public class AnalyticsElevationService {
      * @return the total elevation change either gain or loss base in feet for either gain or loss
      */
     public static double findRouteTotalElevation(RouteData routeData,
-                                                 boolean gain, int stopIndex) {
-        double[] retval = findRouteTotalElevation(routeData,stopIndex);
+            boolean gain, int stopIndex) {
+        double[] retval = findRouteTotalElevation(routeData, stopIndex);
         retval[0] *= ConversionFactors.METERS_TO_FEET;
         retval[1] *= ConversionFactors.METERS_TO_FEET;
-        return retval[gain?0:1];
+        return retval[gain ? 0 : 1];
     }
 
     /**
@@ -88,9 +88,11 @@ public class AnalyticsElevationService {
      * loss.
      */
     public static double[] findRouteTotalElevation(RouteData routeData,
-             int stopIndex) {
+            int stopIndex) {
 
-        double[] retval = new double[] { 0, 0};
+        double[] retval = new double[] {
+                0, 0
+        };
         final GeoPointMetaData[] pts;
 
         if (routeData == null || (pts = routeData.getGeoPoints()) == null)
@@ -98,7 +100,6 @@ public class AnalyticsElevationService {
 
         if (stopIndex < 0)
             stopIndex = pts.length;
-
 
         for (int i = 0; i < pts.length - 1 && i <= stopIndex; i++) {
 
@@ -140,12 +141,11 @@ public class AnalyticsElevationService {
                 }
             }
 
-            if (i == contactIndices[cp]) {
+            if (cp < contactIndices.length && i == contactIndices[cp]) {
                 if (i > 1)
                     gain.add(g);
                 g = 0;
                 cp++;
-
             }
         }
 
@@ -156,7 +156,7 @@ public class AnalyticsElevationService {
 
     public static void findRouteSeekElevationGain(RouteData routeData,
             int seekerIndex, SeekerBarPanelPresenter seekerBarPanelPresenter) {
-        double[] retval = findRouteTotalElevation(routeData,seekerIndex);
+        double[] retval = findRouteTotalElevation(routeData, seekerIndex);
         double val = (retval[0] - retval[1]) * ConversionFactors.METERS_TO_FEET;
 
         seekerBarPanelPresenter.updateGainText(val);

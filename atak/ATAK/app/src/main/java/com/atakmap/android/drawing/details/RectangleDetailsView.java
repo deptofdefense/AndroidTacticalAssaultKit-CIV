@@ -114,7 +114,6 @@ public class RectangleDetailsView extends GenericDetailsView implements
                 _centerButton.setText(_unitPrefs.formatPoint(
                         _rect.getCenter(), true));
 
-
                 int areaUnits = _unitPrefs.getAreaSystem();
 
                 _areaTF.setText(

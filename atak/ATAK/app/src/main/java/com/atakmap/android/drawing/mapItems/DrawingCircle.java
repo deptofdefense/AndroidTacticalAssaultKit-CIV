@@ -419,7 +419,8 @@ public class DrawingCircle extends Shape implements
         if (!updatingRadiusMarker && radius != null && oldCenter != null
                 && !oldCenter.equals(point.get())) {
 
-            double bearing = GeoCalculations.bearingTo(oldCenter, radius.getPoint());
+            double bearing = GeoCalculations.bearingTo(oldCenter,
+                    radius.getPoint());
             GeoPoint rPoint = GeoCalculations.pointAtDistance(point.get(),
                     bearing, getRadius());
 

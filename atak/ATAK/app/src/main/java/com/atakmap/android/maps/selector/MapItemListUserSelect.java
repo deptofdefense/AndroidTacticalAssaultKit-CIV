@@ -1,3 +1,4 @@
+
 package com.atakmap.android.maps.selector;
 
 import android.content.Context;
@@ -33,7 +34,7 @@ class MapItemListUserSelect extends HierarchyListUserSelect {
     private boolean _closed;
 
     MapItemListUserSelect(@NonNull MapView mapView, @NonNull MapItemList list,
-                          @NonNull ListModel listModel) {
+            @NonNull ListModel listModel) {
         super(list.title, 0L);
         _context = mapView.getContext();
         _list = list;
@@ -81,7 +82,7 @@ class MapItemListUserSelect extends HierarchyListUserSelect {
 
     @Override
     public boolean processUserSelections(Context context,
-                                         Set<HierarchyListItem> items) {
+            Set<HierarchyListItem> items) {
 
         // Retrieve map items from the OM list entries
         List<MapItem> mapItems = new ArrayList<>(items.size());

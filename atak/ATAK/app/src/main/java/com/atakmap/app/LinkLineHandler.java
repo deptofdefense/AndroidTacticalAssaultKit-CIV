@@ -365,6 +365,8 @@ public class LinkLineHandler
                             parentItem.getVisible() && childItem.getVisible());
                 }
             };
+            link.assoc.setVisible(
+                    parentItem.getVisible() && childItem.getVisible());
             synchronized (parentItem) {
                 parentItem.addOnVisibleChangedListener(link.vizListener);
             }

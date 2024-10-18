@@ -69,6 +69,8 @@ if (isJavaKernelBuild) {
                 java.srcDirs 'src/android/java'
                 // add default location for android JNI libs (shared across all build types)
                 jniLibs.srcDirs 'src/android/jniLibs'
+                // add default location for JNI sources (distinguished from C++ library sources)
+                jni.srcDirs 'src/main/jni'
             }
             test {
                 java.srcDirs 'src/main/test'
@@ -81,6 +83,8 @@ if (isJavaKernelBuild) {
         from android.sourceSets.main.java.srcDirs
     }
 }
+
+apply plugin: 'org.owasp.dependencycheck'
 
 // Customize our archive basename, which defines the resulting publication artifactId
 project.archivesBaseName = "${rootProject.name}-${project.name}"

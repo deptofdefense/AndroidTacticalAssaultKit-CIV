@@ -177,9 +177,9 @@ public class ProductProviderManager extends BroadcastReceiver {
                     for (Provider p : _providers) {
                         ProductRepository repo = p.get();
                         if (repo != null && repo.equals(pr.getParent())) {
-                            Log.d(TAG, "Found parent provider: " + p.toString()
+                            Log.d(TAG, "Found parent provider: " + p
                                     + ", with compatible product: "
-                                    + pr.toString());
+                                    + pr);
                             return p;
                         }
                     }
@@ -197,8 +197,8 @@ public class ProductProviderManager extends BroadcastReceiver {
                 ProductInformation pr = repo
                         .getProduct(product.getPackageName());
                 if (pr != null && pr.isCompatible()) {
-                    Log.d(TAG, "Found provider: " + p.toString()
-                            + ", with compatible product: " + pr.toString());
+                    Log.d(TAG, "Found provider: " + p
+                            + ", with compatible product: " + pr);
                     return p;
                 }
             }
@@ -208,14 +208,14 @@ public class ProductProviderManager extends BroadcastReceiver {
         synchronized (_providers) {
             for (Provider p : _providers) {
                 if (p.contains(product.getPackageName())) {
-                    Log.d(TAG, "Found provider: " + p.toString()
-                            + ", with product: " + product.toString());
+                    Log.d(TAG, "Found provider: " + p
+                            + ", with product: " + product);
                     return p;
                 }
             }
         }
 
-        Log.w(TAG, "No provider found for: " + product.toString());
+        Log.w(TAG, "No provider found for: " + product);
         return null;
     }
 
@@ -307,7 +307,7 @@ public class ProductProviderManager extends BroadcastReceiver {
                 } else {
                     Log.d(TAG,
                             "init: " + p.getClass().getName() + ": "
-                                    + repo.toString());
+                                    + repo);
                 }
             }
         }

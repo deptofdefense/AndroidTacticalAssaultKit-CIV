@@ -4,7 +4,7 @@ package com.atakmap.android.tilecapture.reader;
 import android.graphics.Point;
 
 import com.atakmap.math.PointD;
-import com.atakmap.util.Disposable;
+import gov.tak.api.util.Disposable;
 
 /**
  * Interface for reading map tiles into a bitmap

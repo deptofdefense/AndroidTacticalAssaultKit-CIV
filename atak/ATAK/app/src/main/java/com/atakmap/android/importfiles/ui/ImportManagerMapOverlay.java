@@ -306,7 +306,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
         for (RemoteResource resource : resources.getResources()) {
             if (_firstLoad && resource
                     .getRefreshSeconds() >= KMLUtil.MIN_NETWORKLINK_INTERVAL_SECS) {
-                Log.d(TAG, "Beginning auto refresh: " + resource.toString());
+                Log.d(TAG, "Beginning auto refresh: " + resource);
                 // check auto-refresh setting
                 _component.download(resource, false);
             }
@@ -417,7 +417,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
         }
 
         if (!resource.isValid()) {
-            Log.w(TAG, "Skipping invalid resource: " + resource.toString());
+            Log.w(TAG, "Skipping invalid resource: " + resource);
             return false;
         }
 
@@ -507,7 +507,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                 FileSystemUtils.deleteFile(resFile);
         } else
             Log.d(TAG, "Skipping delete of missing file for resource: "
-                    + resource.toString());
+                    + resource);
 
         for (RemoteResource child : resource.getChildren())
             deleteResourceContent(child);
@@ -530,7 +530,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
             return;
         }
         if (!resource.isValid()) {
-            Log.w(TAG, "Skipping replacement resource: " + resource.toString());
+            Log.w(TAG, "Skipping replacement resource: " + resource);
             return;
         }
 
@@ -539,7 +539,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
             return;
         }
         if (!newrr.isValid()) {
-            Log.w(TAG, "Skipping replacing resource: " + newrr.toString());
+            Log.w(TAG, "Skipping replacing resource: " + newrr);
             return;
         }
 
@@ -549,10 +549,10 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
             _resources.put(newrr.getName(), newrr);
 
             refresh();
-            Log.d(TAG, "Replacing resource: " + resource.toString() + " with: "
-                    + newrr.toString());
+            Log.d(TAG, "Replacing resource: " + resource + " with: "
+                    + newrr);
         } else {
-            Log.w(TAG, "Failed to replace resource: " + resource.toString());
+            Log.w(TAG, "Failed to replace resource: " + resource);
         }
     }
 

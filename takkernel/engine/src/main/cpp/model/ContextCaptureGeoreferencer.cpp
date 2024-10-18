@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <string>
 #include <sstream>
 #include <regex>
@@ -329,3 +329,4 @@ namespace {
         return TE_Ok;
     }
 }
+#endif

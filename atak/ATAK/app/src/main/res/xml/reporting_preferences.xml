@@ -4,20 +4,23 @@
     <PreferenceCategory
         android:title="@string/preferences_text98"
         android:key="publishCategory">
-        <CheckBoxPreference 
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text99"
             android:key="dispatchLocationCotExternal"
             android:defaultValue="true"
-            android:summary="@string/preferences_text100"/>
-        <CheckBoxPreference 
+            android:summary="@string/preferences_text100"
+            />
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/hide_my_position"
             android:key="dispatchLocationHidden"
             android:defaultValue="false"
-            android:summary="@string/hide_my_position_summary"/>
-        <ListPreference
+            android:summary="@string/hide_my_position_summary"
+            />
+        <com.atakmap.android.gui.PanListPreference
             android:entryValues="@array/reporting_strategy_values"
             android:entries="@array/reporting_strategy_names"
             android:summary="@string/reporting_strategy_summary"
+
             android:key="locationReportingStrategy"
             android:title="@string/preferences_text101"
             android:defaultValue="@string/preferences_text102"
@@ -26,12 +29,14 @@
             android:key="dynamicReportingRateStationaryUnreliable"
             android:title="@string/preferences_text103"
             android:summary="@string/preferences_text104"
+
             android:defaultValue="30"
             android:inputType = "number"/>
         <com.atakmap.android.gui.PanEditTextPreference
             android:key="dynamicReportingRateMinUnreliable"
             android:title="@string/preferences_text105"
             android:summary="@string/preferences_text106"
+
             android:defaultValue="20"
             android:inputType = "number"/>
         <com.atakmap.android.gui.PanEditTextPreference
@@ -72,7 +77,7 @@
             android:summary="@string/preferences_text118"
             android:defaultValue="15"
             android:inputType = "number"/>
-        <CheckBoxPreference 
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text119"
             android:key="dispatchLocationCotExternalAtStart"
             android:defaultValue="true"

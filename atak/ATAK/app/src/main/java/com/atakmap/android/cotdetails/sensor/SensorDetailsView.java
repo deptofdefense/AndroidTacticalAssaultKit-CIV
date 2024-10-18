@@ -642,8 +642,9 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                     if (fill) {
                         int a = sensorFOV.getFillColor() >> 24;
                         sensorFOV.setFillColor((a << 24) | (color & 0xFFFFFF));
-                    } else
+                    } else {
                         sensorFOV.setStrokeColor(color);
+                    }
                     _updateColorButtonDrawable();
                 }
             };
@@ -849,7 +850,8 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                             _coordButton
                                     .setText(coordView.getFormattedString());
 
-                            CameraController.Programmatic.panTo(_mapView.getRenderer3(), p.get(), true);
+                            CameraController.Programmatic.panTo(
+                                    _mapView.getRenderer3(), p.get(), true);
 
                             sensorItem.persist(
                                     _mapView.getMapEventDispatcher(), null,

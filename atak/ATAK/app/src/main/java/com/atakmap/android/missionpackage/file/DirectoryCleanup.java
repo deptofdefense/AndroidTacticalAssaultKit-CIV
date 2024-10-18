@@ -54,7 +54,7 @@ public class DirectoryCleanup {
         DirectoryCleanupTask task = new DirectoryCleanupTask(path, age);
         Log.d(TAG,
                 "Adding task every " + period + " " + units.toString()
-                        + " for " + task.toString());
+                        + " for " + task);
 
         futureTasks.add(scheduler.scheduleWithFixedDelay(task, delay, period,
                 units));
@@ -105,7 +105,7 @@ public class DirectoryCleanup {
 
         @Override
         public void run() {
-            Log.d(TAG, "Running: " + toString());
+            Log.d(TAG, "Running: " + this);
             long cutoff = android.os.SystemClock.elapsedRealtime() - _age;
             // delete all "old" contents in _path, but not _path itself
             delete(_path, cutoff);

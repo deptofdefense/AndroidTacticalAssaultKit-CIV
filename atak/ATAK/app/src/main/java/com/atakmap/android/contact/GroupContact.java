@@ -414,10 +414,6 @@ public class GroupContact extends Contact implements Search {
             if (real == null || real == this)
                 continue;
 
-            // Filter out invisible contacts
-            if (!real.isVisible())
-                continue;
-
             // Refresh child group
             if (real instanceof GroupContact)
                 real.syncRefresh(this.listener, this.filter);
@@ -545,7 +541,9 @@ public class GroupContact extends Contact implements Search {
         int unread = super.getUnreadCount();
         List<Contact> contacts = getAllContacts(false);
         for (Contact c : contacts) {
-            if (c != null && getUID().equals(c.getParentUID())) {
+            if (c != null && getUID().equals(c.getParentUID())
+                    && !FilteredContactsManager.getInstance()
+                            .isContactFiltered(c)) {
                 if (c instanceof GroupContact)
                     unread += ((GroupContact) c).calculateUnread();
                 else

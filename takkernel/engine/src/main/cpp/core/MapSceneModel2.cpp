@@ -39,7 +39,7 @@ using namespace TAK::Engine::Util;
 #define MAX_ZOOM_RANGE std::numeric_limits<double>::max()
 #else
 #define MIN_ZOOM_RANGE 10
-#define MAX_ZOOM_RANGE 1400000000
+#define MAX_ZOOM_RANGE   16000000
 #endif
 
 namespace
@@ -357,6 +357,7 @@ MapSceneModel2 &MapSceneModel2::operator=(const MapSceneModel2 &other) NOTHROWS
     this->focusX = other.focusX;
     this->focusY = other.focusY;
     this->gsd = other.gsd;
+    this->displayDpi = other.displayDpi;
 
     // assign the publicly visible 'earth' pointer. we'll use a "leaker" here
     // because the actual memory is owned by 'displayModel'

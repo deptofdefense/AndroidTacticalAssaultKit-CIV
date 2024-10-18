@@ -25,9 +25,8 @@ namespace TAK {
                         std::size_t pc{0u};
                         bool interrupted{false};
                     };
-                private :
-                    GLGlobeSurfaceRenderer(GLGlobe &owner) NOTHROWS;
                 public :
+                    GLGlobeSurfaceRenderer(GLGlobe &owner) NOTHROWS;
                     ~GLGlobeSurfaceRenderer() NOTHROWS;
                 public :
                     /** Marks all visible tiles as dirty. */
@@ -78,6 +77,17 @@ namespace TAK {
                     int64_t lastRefresh;
 
                     /**
+                     * Maximum amount of LOD compression to be applied to
+                     * megatexture tiles. Tiles populated for LODs lower than
+                     * the _current_ maximum are stored in tiles whose
+                     * dimensions are progressively smaller than two. This will
+                     * result in considerable savings in megatexture storage
+                     * for those tiles that are either offscreen or very far
+                     * away.
+                     */
+                    std::size_t maxLodCompression;
+
+                    /**
                      * Guards following resources:
                      * <UL>
                      *  <LI>dirty regions
@@ -102,7 +112,6 @@ namespace TAK {
                             std::vector<std::size_t> offscreen;
                         } dirtyTiles;
 
-                        double resadj{1.0};
                         std::size_t level0{0u};
 
                         GLDirtyRegion dirtyRegions;
@@ -110,6 +119,8 @@ namespace TAK {
 
                         int64_t updateStart{0LL};
                         std::size_t frames{0u};
+
+                        void* basemap{ nullptr };
                     } updateContext;
 
                     GLDiagnostics profile;

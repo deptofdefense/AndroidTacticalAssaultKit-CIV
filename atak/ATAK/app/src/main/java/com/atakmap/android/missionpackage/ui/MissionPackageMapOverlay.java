@@ -307,12 +307,12 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
         }
 
         if (mapItemUIDArray == null || mapItemUIDArray.length < 1) {
-            Log.d(TAG, "No Map Items to add to group " + group.toString());
+            Log.d(TAG, "No Map Items to add to group " + group);
             return;
         }
 
         Log.d(TAG, "Adding " + mapItemUIDArray.length + " map items to "
-                + group.toString());
+                + group);
 
         group.addMapItems(_view.getRootGroup(), mapItemUIDArray);
 
@@ -577,7 +577,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
             return false;
         }
 
-        Log.d(TAG, "Adding " + group.toString());
+        Log.d(TAG, "Adding " + group);
         MissionPackageHierarchyListItem item = new MissionPackageHierarchyListItem(
                 _view, this, group);
         boolean updated;

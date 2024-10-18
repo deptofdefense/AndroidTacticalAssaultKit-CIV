@@ -399,7 +399,7 @@ namespace
 
             if(key) {
 #ifdef SQLITE_HAS_CODEC
-                sqlite3_key(connection, key, keylen);
+                sqlite3_key(connection, key, (int)keylen);
                 response = sqlite3_exec(connection, "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
                 if(response != SQLITE_OK) {
                     throwDB_Error(response,

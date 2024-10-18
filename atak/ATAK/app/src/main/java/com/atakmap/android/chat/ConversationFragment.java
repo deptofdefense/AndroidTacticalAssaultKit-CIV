@@ -10,6 +10,7 @@ import android.content.Intent;
 
 import com.atakmap.android.contact.Contact;
 import com.atakmap.android.contact.Contacts;
+import com.atakmap.android.contact.FilteredContactsManager;
 import com.atakmap.android.contact.IndividualContact;
 import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.items.MapItemUser;
@@ -161,9 +162,30 @@ public class ConversationFragment extends Fragment implements
                     .getMapView().getContext());
             AtakBroadcast.getInstance().registerReceiver(_historyReceiver,
                     new DocumentedIntentFilter(GeoChatService.HISTORY_UPDATE));
+
+            // DocumentedIntentFilter for incoming chat messages
+            AtakBroadcast.DocumentedIntentFilter contactFilter = new AtakBroadcast.DocumentedIntentFilter();
+            contactFilter
+                    .addAction(FilteredContactsManager.ATAK_FILTER_CONTACT);
+            AtakBroadcast.getInstance().registerReceiver(contactFilterReceiver,
+                    contactFilter);
         }
         return _mChatLineAdapter;
     }
+
+    private final BroadcastReceiver contactFilterReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent != null) {
+                for (Contact c : Contacts.getInstance().getAllContacts()) {
+                    if (c instanceof IndividualContact
+                            && c.getName().equals(title))
+                        c.setUnreadCount(_mChatLineAdapter.getUnreadCount());
+                }
+                Contacts.getInstance().updateTotalUnreadCount();
+            }
+        }
+    };
 
     public boolean addOrAckChatLine(ChatLine toAddOrAck) {
         if (!acksAvailable)
@@ -590,7 +612,10 @@ public class ConversationFragment extends Fragment implements
             toAdd.timeSent = (new CoordinatedTime()).getMilliseconds();
             toAdd.senderUid = MapView.getDeviceUid();
             toAdd.message = msg;
-            String conversationId = getArguments().getString("id");
+            final Bundle arguments = getArguments();
+            String conversationId = arguments != null
+                    ? arguments.getString("id")
+                    : null;
             toAdd.conversationId = (conversationId != null) ? conversationId
                     : "";
             toAdd.conversationName = getTitle();
@@ -611,14 +636,17 @@ public class ConversationFragment extends Fragment implements
         final ArrayList<String> modes = new ArrayList<>();
         XmlResourceParser chat_modes = null;
         try {
-            chat_modes = getActivity().getResources().getXml(R.xml.chat_modes);
-            int eventType = chat_modes.getEventType();
-            while (eventType != XmlResourceParser.END_DOCUMENT) {
-                if (eventType == XmlResourceParser.START_TAG &&
-                        chat_modes.getName().equals("mode")) {
-                    modes.add(chat_modes.getAttributeValue(null, "name"));
+            final Activity activity = getActivity();
+            if (activity != null) {
+                chat_modes = activity.getResources().getXml(R.xml.chat_modes);
+                int eventType = chat_modes.getEventType();
+                while (eventType != XmlResourceParser.END_DOCUMENT) {
+                    if (eventType == XmlResourceParser.START_TAG &&
+                            chat_modes.getName().equals("mode")) {
+                        modes.add(chat_modes.getAttributeValue(null, "name"));
+                    }
+                    eventType = chat_modes.next();
                 }
-                eventType = chat_modes.next();
             }
         } catch (Exception ignored) {
 
@@ -639,68 +667,71 @@ public class ConversationFragment extends Fragment implements
         }
         final ArrayList<ButtonHolder> output = primeList(4);
         // new ArrayList<ButtonHolder>(8);
-        final XmlResourceParser chat_modes = getActivity().getResources()
-                .getXml(R.xml.chat_modes);
-        try {
-            int eventType = chat_modes.getEventType();
-            boolean modeFound = false;
-            int modeIndex = -1;
+        final Activity activity = getActivity();
+        if (activity != null) {
+            final XmlResourceParser chat_modes = activity.getResources()
+                    .getXml(R.xml.chat_modes);
+            try {
+                int eventType = chat_modes.getEventType();
+                boolean modeFound = false;
+                int modeIndex = -1;
 
-            while (eventType != XmlResourceParser.END_DOCUMENT) {
-                if (eventType == XmlResourceParser.START_TAG) {
-                    // Log.e(TAG, "Start of element: " + chat_modes.getName() + " name: " +
-                    // chat_modes.getAttributeValue(null, "name"));
-                    if (chat_modes.getName().equals("mode")
-                            &&
-                            chat_modes.getAttributeValue(null, "name").equals(
-                                    modeName)) {
-                        // Log.e(TAG, "Found Mode");
-                        modeIndex = Integer.parseInt(chat_modes
-                                .getAttributeValue(null, "index"));
-                        modeFound = true;
-                    } else if (chat_modes.getName().equals("button") &&
-                            modeFound) {
-                        // Log.e(TAG, "Found button");
-                        int buttonIndex = Integer.parseInt(chat_modes
-                                .getAttributeValue(null,
-                                        "index"));
-                        output.set(
-                                buttonIndex,
-                                new ButtonHolder(buttonIndex, chat_modes
-                                        .getAttributeValue(null,
-                                                "label"),
-                                        chat_modes
-                                                .getAttributeValue(null,
-                                                        "value")));
-                    }
-                } else if (eventType == XmlResourceParser.END_TAG) {
-                    // Log.e(TAG, "End of element: " + chat_modes.getName());
-                    if (chat_modes.getName().equals("mode") && modeFound) {
-                        for (int buttonIndex = 0; buttonIndex < 4; buttonIndex++) {
-                            String text = _chatPrefs.getString("btnText"
-                                    + modeIndex + ""
-                                    + buttonIndex, "");
-                            String msg = _chatPrefs.getString("btnMsg"
-                                    + modeIndex + ""
-                                    + buttonIndex, "");
-
-                            if (!msg.equals("") && !text.equals(""))
-                                output.set(buttonIndex, new ButtonHolder(
-                                        buttonIndex, text, msg));
+                while (eventType != XmlResourceParser.END_DOCUMENT) {
+                    if (eventType == XmlResourceParser.START_TAG) {
+                        // Log.e(TAG, "Start of element: " + chat_modes.getName() + " name: " +
+                        // chat_modes.getAttributeValue(null, "name"));
+                        if (chat_modes.getName().equals("mode")
+                                &&
+                                chat_modes.getAttributeValue(null, "name")
+                                        .equals(
+                                                modeName)) {
+                            // Log.e(TAG, "Found Mode");
+                            modeIndex = Integer.parseInt(chat_modes
+                                    .getAttributeValue(null, "index"));
+                            modeFound = true;
+                        } else if (chat_modes.getName().equals("button") &&
+                                modeFound) {
+                            // Log.e(TAG, "Found button");
+                            int buttonIndex = Integer.parseInt(chat_modes
+                                    .getAttributeValue(null,
+                                            "index"));
+                            output.set(
+                                    buttonIndex,
+                                    new ButtonHolder(buttonIndex, chat_modes
+                                            .getAttributeValue(null,
+                                                    "label"),
+                                            chat_modes
+                                                    .getAttributeValue(null,
+                                                            "value")));
                         }
-                        modeFound = false;
-                        modes.add(modeIndex, new Mode(modeName, output));
-                        modeIndex = -1;
+                    } else if (eventType == XmlResourceParser.END_TAG) {
+                        // Log.e(TAG, "End of element: " + chat_modes.getName());
+                        if (chat_modes.getName().equals("mode") && modeFound) {
+                            for (int buttonIndex = 0; buttonIndex < 4; buttonIndex++) {
+                                String text = _chatPrefs.getString("btnText"
+                                        + modeIndex + ""
+                                        + buttonIndex, "");
+                                String msg = _chatPrefs.getString("btnMsg"
+                                        + modeIndex + ""
+                                        + buttonIndex, "");
+
+                                if (!msg.equals("") && !text.equals(""))
+                                    output.set(buttonIndex, new ButtonHolder(
+                                            buttonIndex, text, msg));
+                            }
+                            modeFound = false;
+                            modes.add(modeIndex, new Mode(modeName, output));
+                            modeIndex = -1;
+                        }
                     }
+                    eventType = chat_modes.next();
                 }
-                eventType = chat_modes.next();
+            } catch (Exception e) {
+                Log.e(TAG, "Encountered error", e);
+            } finally {
+                if (chat_modes != null)
+                    chat_modes.close();
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Encountered error");
-            Log.e(TAG, "error: ", e);
-        } finally {
-            if (chat_modes != null)
-                chat_modes.close();
         }
         return output;
     }
@@ -709,6 +740,7 @@ public class ConversationFragment extends Fragment implements
     public void onDestroyView() {
         super.onDestroyView();
         AtakBroadcast.getInstance().unregisterReceiver(_clearReceiver);
+        AtakBroadcast.getInstance().unregisterReceiver(contactFilterReceiver);
     }
 
     @Override

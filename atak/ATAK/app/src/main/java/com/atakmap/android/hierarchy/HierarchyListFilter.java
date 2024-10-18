@@ -1,6 +1,8 @@
 
 package com.atakmap.android.hierarchy;
 
+import androidx.annotation.NonNull;
+
 /**
  * Generic filter that accepts all items
  * Extend this class for other filters
@@ -40,6 +42,7 @@ public class HierarchyListFilter {
         return getClass() == HierarchyListFilter.class;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return super.toString() + " (" + sort.toString() + ")";

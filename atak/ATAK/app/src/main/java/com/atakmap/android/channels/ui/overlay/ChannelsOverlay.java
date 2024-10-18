@@ -38,16 +38,18 @@ import com.atakmap.comms.TAKServerListener;
 import com.atakmap.android.channels.net.ServerGroupsClient;
 import com.atakmap.comms.app.CotPortListActivity;
 import com.atakmap.coremap.cot.event.CotEvent;
+import gov.tak.api.util.Disposable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class ChannelsOverlay extends AbstractMapOverlay2 implements
         CotServiceRemote.CotEventListener,
-        ServerGroupsClient.ServerGroupsCallback {
+        ServerGroupsClient.ServerGroupsCallback, Disposable {
 
     private static final String TAG = "ChannelsOverlay";
     private static final String CHANNELS = "ChannelsOverlay";
@@ -58,8 +60,8 @@ public class ChannelsOverlay extends AbstractMapOverlay2 implements
     private final MapView mapView;
     private final Context context;
     private HierarchyListAdapter overlayManager;
-    private final HashMap<String, List<ServerGroup>> serverGroupCache = new HashMap<>();
-    private final HashMap<String, List<ServerGroupHierarchyListItem>> serverGroupHierarchyListItemCache = new HashMap<>();
+    private final Map<String, List<ServerGroup>> serverGroupCache = new HashMap<>();
+    private final Map<String, List<ServerGroupHierarchyListItem>> serverGroupHierarchyListItemCache = new HashMap<>();
     private final CotStreamListener cotStreamListener;
     private int notificationId = -1;
     private AlertDialog dialog;
@@ -141,6 +143,7 @@ public class ChannelsOverlay extends AbstractMapOverlay2 implements
         getGroups(null, false);
     }
 
+    @Override
     public void dispose() {
         active = false;
         setGroupsThread.dispose(false);
@@ -414,7 +417,7 @@ public class ChannelsOverlay extends AbstractMapOverlay2 implements
         try {
             Intent listIntent = getListIntent(context);
             Log.d(TAG, "Firing intent to open the overlay manager");
-            Log.v(TAG, "Intent contents: " + listIntent.toString());
+            Log.v(TAG, "Intent contents: " + listIntent);
             AtakBroadcast.getInstance().sendBroadcast(listIntent);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);

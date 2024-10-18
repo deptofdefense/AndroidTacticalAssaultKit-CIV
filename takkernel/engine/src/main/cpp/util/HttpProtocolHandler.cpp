@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <curl/curl.h>
 #include <deque>
 #include <algorithm>
@@ -12,6 +12,8 @@
 #include "util/URI.h"
 
 using namespace TAK::Engine::Util;
+
+#define CURL_TIMEOUT_MS 10000
 
 namespace {
     static const char * const DEFAULT_USER_AGENT = "TAK";
@@ -322,7 +324,7 @@ namespace {
             long responseCode = 0;
             do {
                 int numfds;
-                CURLMcode mc = curl_multi_wait(curl_multi_, NULL, 0, INT_MAX, &numfds);
+                CURLMcode mc = curl_multi_wait(curl_multi_, NULL, 0, CURL_TIMEOUT_MS, &numfds);
                 if (mc != CURLM_OK) {
                     break;
                 }
@@ -538,7 +540,7 @@ namespace {
     TAKErr CURLDataInput::performRead(size_t len) NOTHROWS {
         while (running_ && buf_.size() < len) {
             int numfds;
-            CURLMcode mc = curl_multi_wait(curl_multi_, NULL, 0, INT_MAX, &numfds);
+            CURLMcode mc = curl_multi_wait(curl_multi_, NULL, 0, CURL_TIMEOUT_MS, &numfds);
             if (mc != CURLM_OK) {
                 return TE_IO;
             }
@@ -547,3 +549,4 @@ namespace {
         return TE_Ok;
     }
 }
+#endif

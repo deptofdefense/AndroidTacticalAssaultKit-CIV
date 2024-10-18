@@ -4,6 +4,8 @@ package com.atakmap.android.channels.net;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -40,6 +42,7 @@ public class GetAllServerGroupsRequest implements Parcelable {
         return sendLatestSA;
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())

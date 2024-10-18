@@ -441,7 +441,6 @@ public class GLMapView implements
     public final State currentScene = new State();
 
     private int impl;
-    private double collideRadius = 10d; // 10m
 
     private MapSceneModel lastsm;
 
@@ -547,6 +546,9 @@ public class GLMapView implements
         }
         if(terrainBlendControl != null)
             this.registerControl(null, terrainBlendControl);
+
+        // default collide radius of 10m
+        setCollideRadius(pointer.raw, 10d);
 
         // assign current pass/scene `scene` so non-null before sync
         currentScene.scene = new MapSceneModel(_surface.getDpi(),
@@ -743,7 +745,7 @@ public class GLMapView implements
                 alt = at.getAltitude();
             if(at.getAltitudeReference() == GeoPoint.AltitudeReference.AGL)
                 alt += ElevationManager.getElevation(at.getLatitude(), at.getLongitude(), null);
-            return lookAt(this.pointer.raw, at.getLatitude(), at.getLongitude(), alt, resolution, azimuth, tilt, collideRadius, collideMode, animate, impl);
+            return lookAt(this.pointer.raw, at.getLatitude(), at.getLongitude(), alt, resolution, azimuth, tilt, Double.NaN, collideMode, animate, impl);
         } finally {
             this.rwlock.releaseRead();
         }
@@ -786,7 +788,7 @@ public class GLMapView implements
                 alt = from.getAltitude();
             if(from.getAltitudeReference() == GeoPoint.AltitudeReference.AGL)
                 alt += ElevationManager.getElevation(from.getLatitude(), from.getLongitude(), null);
-            return lookFrom(this.pointer.raw, from.getLatitude(), from.getLongitude(), alt, azimuth, elevation, collideRadius, collideMode, animate, impl);
+            return lookFrom(this.pointer.raw, from.getLatitude(), from.getLongitude(), alt, azimuth, elevation, Double.NaN, collideMode, animate, impl);
         } finally {
             this.rwlock.releaseRead();
         }
@@ -798,7 +800,7 @@ public class GLMapView implements
         try {
             if(this.pointer.raw == 0L)
                 return null;
-            return MapSceneModel_interop.create(getMapSceneModel(this.pointer.raw, instant, (origin == DisplayOrigin.Lowerleft), impl));
+            return MapSceneModel_interop.create(getMapSceneModel(this.pointer.raw, instant, (origin == DisplayOrigin.LowerLeft), impl));
         } finally {
             this.rwlock.releaseRead();
         }
@@ -853,7 +855,7 @@ public class GLMapView implements
 
     @Override
     public DisplayOrigin getDisplayOrigin() {
-        return DisplayOrigin.Lowerleft;
+        return DisplayOrigin.LowerLeft;
     }
 
     @Override
@@ -1489,8 +1491,6 @@ public class GLMapView implements
     }
 
     public void start() {
-        _surface.addOnSizeChangedListener(sizeChangedHandler);
-        sizeChangedHandler.onSizeChanged(_surface, _surface.getWidth(), _surface.getHeight());
         setDisplayDpi(this.pointer.raw, _surface.getDpi(), impl);
         start(this.pointer.raw);
         sync(this.pointer.raw, this, false);
@@ -1499,7 +1499,6 @@ public class GLMapView implements
     }
 
     public void stop() {
-        _surface.removeOnSizeChangedListener(sizeChangedHandler);
         stop(this.pointer.raw);
     }
 
@@ -2895,7 +2894,7 @@ public class GLMapView implements
             try {
                 if (pointer.raw == 0L)
                     return;
-                collideRadius = radius;
+                setCollideRadius(pointer.raw, radius);
             } finally {
                 rwlock.releaseRead();
             }
@@ -2903,7 +2902,14 @@ public class GLMapView implements
 
         @Override
         public double getCameraCollisionRadius() {
-            return collideRadius;
+            rwlock.acquireRead();
+            try {
+                if (pointer.raw == 0L)
+                    return 0d;
+                return getCollideRadius(pointer.raw);
+            } finally {
+                rwlock.releaseRead();
+            }
         }
 
         @Override
@@ -3277,6 +3283,14 @@ public class GLMapView implements
             }
         }
     }
+    private void dispatchCameraChangeRequested() {
+        synchronized(_cameraChangedListeners) {
+            for(OnCameraChangedListener l : _cameraChangedListeners) {
+                if(l instanceof OnCameraChangedListener2)
+                    ((OnCameraChangedListener2)l).onCameraChangeRequested(GLMapView.this);
+            }
+        }
+    }
 
     /*************************************************************************/
     // Interop
@@ -3293,6 +3307,16 @@ public class GLMapView implements
     //static native GLMapView getObject(long pointer);
     //static Pointer clone(long otherRawPointer);
     static native void destruct(Pointer pointer);
+    static long castToPointer(Class<?> as, GLMapView object) {
+        if(as == null)
+            return 0L;
+        else if(as.equals(MapRenderer3.class))
+            return asMapRenderer(object.pointer.raw);
+        else
+            return 0L;
+    }
+
+    static native long asMapRenderer(long glglobePtr);
 
     // native implementation
 
@@ -3314,6 +3338,8 @@ public class GLMapView implements
     static native int getDrawModeColor(long ptr, int tedm);
     static native void setDrawModeColor(long ptr, int tedm, int color);
     static native void getSurfaceBounds(long ptr, Collection<Envelope> bounds);
+    static native void setCollideRadius(long ptr, double radius);
+    static native double getCollideRadius(long ptr);
 
     // illumination control
     static native void setIlluminationEnabled(long ptr, boolean enabled);

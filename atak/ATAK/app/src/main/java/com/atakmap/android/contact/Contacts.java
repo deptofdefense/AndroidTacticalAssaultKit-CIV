@@ -141,7 +141,7 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
         if (contact == null)
             return;
 
-        Log.d(TAG, "removeContact: " + contact.toString());
+        Log.d(TAG, "removeContact: " + contact);
         // Remove contact from master list
         synchronized (contacts) {
             contacts.remove(contact);

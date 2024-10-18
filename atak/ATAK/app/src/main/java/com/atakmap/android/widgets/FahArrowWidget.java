@@ -280,7 +280,8 @@ public class FahArrowWidget extends ShapeWidget implements
             return 0;
         }
         // Get the distance and azimuth to from the designator to the target
-        int bearing = (int) Math.round(GeoCalculations.bearingTo(_lastDesignatorLoc, _target.getPoint()));
+        int bearing = (int) Math.round(GeoCalculations
+                .bearingTo(_lastDesignatorLoc, _target.getPoint()));
         double diff = ATAKUtilities.convertFromTrueToMagnetic(
                 _target.getPoint(), bearing)
                 - _fahAngle;
@@ -316,8 +317,9 @@ public class FahArrowWidget extends ShapeWidget implements
             return;
         }
 
-        int bearing = (int) Math.round(GeoCalculations.bearingTo(_lastDesignatorLoc,
-                _target.getPoint()));
+        int bearing = (int) Math
+                .round(GeoCalculations.bearingTo(_lastDesignatorLoc,
+                        _target.getPoint()));
 
         // Now update the angle based on the azimuth and offset
         //Round the fahAngle to nearest 5 like everything else
@@ -471,7 +473,8 @@ public class FahArrowWidget extends ShapeWidget implements
         // use TRUE for the angle computation.
         int bearing = (int) Math.round(ATAKUtilities.convertFromTrueToMagnetic(
                 _target.getPoint(),
-                GeoCalculations.bearingTo(_lastDesignatorLoc, _target.getPoint())));
+                GeoCalculations.bearingTo(_lastDesignatorLoc,
+                        _target.getPoint())));
 
         // Now update the angle based on the azimuth and offset
         _fahAngle = (int) Math.round((bearing + _fahOffset) / 5f) * 5;

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include <chrono>
 
 #include "renderer/model/GLSceneLayer.h"
@@ -660,3 +661,4 @@ namespace
         return GLLayerFactory2_create(value, subject, std::move(GLMapRenderable2Ptr(new GLSceneLayer(ctx, *impl), Memory_deleter_const<GLMapRenderable2, GLSceneLayer>)));
     }
 }
+#endif

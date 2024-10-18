@@ -3,39 +3,47 @@ package com.atakmap.android.radiolibrary;
 
 import android.content.BroadcastReceiver;
 
-import android.app.PendingIntent;
 import java.io.IOException;
 
+import com.atakmap.app.R;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
+
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.content.Context;
 import android.content.Intent;
+import android.widget.Toast;
+
 import com.atakmap.coremap.log.Log;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import java.util.List;
 
-public class HarrisConfigurator {
+public class HarrisConfigurator extends PortCommunicator {
 
     private final String TAG = "HarrisConfigurator";
+    private final static String ACTION = "com.partech.harrisconfigurator.ACTION_USB_PERMISSION";
     private String callsign;
     private boolean localreport = false;
     private final Context context;
+    private final HarrisSaRadioManager harrisSaRadioManager;
 
-    public HarrisConfigurator(Context context) {
+    public HarrisConfigurator(Context context,
+            HarrisSaRadioManager harrisSaRadioManager) {
         this.context = context;
         AtakBroadcast
                 .getInstance()
                 .registerSystemReceiver(attached, new DocumentedIntentFilter(
-                        "com.partech.harrisconfigurator.ACTION_USB_PERMISSION"));
+                        ACTION));
+
+        this.harrisSaRadioManager = harrisSaRadioManager;
     }
 
     public void dispose() {
-        context.unregisterReceiver(attached);
+        AtakBroadcast.getInstance().unregisterSystemReceiver(attached);
     }
 
     private final BroadcastReceiver attached = new BroadcastReceiver() {
@@ -45,18 +53,16 @@ public class HarrisConfigurator {
             if (action == null)
                 return;
 
-            if (action
-                    .equals("com.partech.harrisconfigurator.ACTION_USB_PERMISSION")) {
+            if (action.equals(ACTION)) {
                 Log.d(TAG, "permission granted for the usb device");
                 final UsbManager usbManager = (UsbManager) context
                         .getSystemService(Context.USB_SERVICE);
-                UsbDevice dev = intent
-                        .getParcelableExtra(UsbManager.EXTRA_DEVICE);
                 final boolean granted = intent.getBooleanExtra(
                         UsbManager.EXTRA_PERMISSION_GRANTED, false);
                 if (granted)
-                    configure(usbManager, dev, callsign, localreport);
-
+                    configure(usbManager, harrisSaRadioManager
+                            .getSelectedRadio().getUsbDevice(), callsign,
+                            localreport);
             }
         }
 
@@ -66,34 +72,21 @@ public class HarrisConfigurator {
         this.callsign = callsign;
         this.localreport = localreport;
         if (callsign != null) {
-            scan(context, callsign);
-        }
-    }
-
-    private void scan(Context context, String callsign) {
-
-        final UsbManager usbManager = (UsbManager) context
-                .getSystemService(Context.USB_SERVICE);
-
-        if (usbManager == null)
-            return;
-
-        for (final UsbDevice dev : usbManager.getDeviceList().values()) {
-
-            PendingIntent mPI = PendingIntent
-                    .getBroadcast(
-                            context,
-                            0,
-                            new Intent(
-                                    "com.partech.harrisconfigurator.ACTION_USB_PERMISSION"),
-                            0);
-
-            usbManager.requestPermission(dev, mPI);
-
-            if (!usbManager.hasPermission(dev)) {
-                return;
+            final UsbManager usbManager = (UsbManager) context
+                    .getSystemService(Context.USB_SERVICE);
+            if (harrisSaRadioManager.getSelectedRadio() != null) {
+                if (harrisSaRadioManager.getSelectedRadio().hasPermission()) {
+                    configure(usbManager, harrisSaRadioManager
+                            .getSelectedRadio().getUsbDevice(), callsign,
+                            localreport);
+                } else {
+                    harrisSaRadioManager.getSelectedRadio()
+                            .requestPermission(ACTION);
+                }
             } else {
-                configure(usbManager, dev, callsign, localreport);
+                Log.e(TAG, "selected radio is null, cannot configure radio.");
+                Toast.makeText(context, R.string.harris_sa_failed_to_configure,
+                        Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -165,34 +158,4 @@ public class HarrisConfigurator {
             Log.e(TAG, "error occurred during configuration", e);
         }
     }
-
-    private void drain(final UsbSerialPort port) {
-        int bread = 0;
-        do {
-            byte[] buf = new byte[1024];
-            try {
-                bread = port.read(buf, 100);
-            } catch (IOException ioe) {
-                Log.d(TAG, "", ioe);
-            }
-        } while (bread > 0);
-    }
-
-    private void write(final UsbSerialPort port, final String command)
-            throws IOException {
-        if (command == null)
-            return;
-
-        drain(port);
-
-        byte[] ascii = command.getBytes();
-        int amtWritten;
-        amtWritten = port.write(ascii, 1000);
-        if (amtWritten != -1) {
-            Log.d(TAG, "port.write success, amtWritten=" + amtWritten);
-        } else {
-            Log.d(TAG, "error writing to port");
-        }
-    }
-
 }

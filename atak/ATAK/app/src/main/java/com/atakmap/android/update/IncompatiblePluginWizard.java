@@ -99,7 +99,7 @@ public class IncompatiblePluginWizard {
             }
 
             plugins.add(plugin);
-            Log.d(TAG, "Adding incompat plugin: " + plugin.toString());
+            Log.d(TAG, "Adding incompat plugin: " + plugin);
         }
 
         //sort by update availability, and then label alphabetically
@@ -339,7 +339,7 @@ public class IncompatiblePluginWizard {
         if (provider == null) {
             Log.w(TAG,
                     "Cannot update incompat without provider: "
-                            + plugin.toString());
+                            + plugin);
             //TODO TOAST
             return;
         }
@@ -348,7 +348,7 @@ public class IncompatiblePluginWizard {
         if (product == null) {
             Log.w(TAG,
                     "Cannot update incompat without product: "
-                            + plugin.toString());
+                            + plugin);
             //TODO TOAST
             return;
         }
@@ -357,12 +357,12 @@ public class IncompatiblePluginWizard {
             //TODO do the next Plugin/extensions get loaded, and updated code in place with this approach?
             //or do we need a restart after a plugin is unloaded and reloaded?
 
-            Log.d(TAG, "Updating incompat: " + product.toString() + " via "
-                    + provider.toString());
+            Log.d(TAG, "Updating incompat: " + product + " via "
+                    + provider);
             provider.install(product);
         } else {
-            Log.d(TAG, "Uninstalling incompat: " + product.toString() + " via "
-                    + provider.toString());
+            Log.d(TAG, "Uninstalling incompat: " + product + " via "
+                    + provider);
             provider.uninstall(product);
         }
     }

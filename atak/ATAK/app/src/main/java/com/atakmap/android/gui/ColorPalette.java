@@ -28,6 +28,7 @@ import android.widget.LinearLayout;
 
 import com.atakmap.android.util.SimpleSeekBarChangeListener;
 import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 
 /**
@@ -82,7 +83,10 @@ public class ColorPalette extends LinearLayout {
 
     private int _strokeColor = Color.WHITE, _fillColor = 0;
     private boolean _showFill = false;
-    private OnColorSelectedListener _listener;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected OnColorSelectedListener _listener;
 
     public ColorPalette(Context context) {
         this(context, null);
@@ -92,7 +96,8 @@ public class ColorPalette extends LinearLayout {
         this(context, attrs, 0);
     }
 
-    public ColorPalette(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public ColorPalette(Context context, @Nullable AttributeSet attrs,
+            int defStyleAttr) {
         this(context, attrs, defStyleAttr, 0);
     }
 
@@ -134,21 +139,23 @@ public class ColorPalette extends LinearLayout {
         Button customBtn = root.findViewById(R.id.custom_color);
 
         // Stroke or fill selector
-        _selector.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                if (checkedId == R.id.fill_color
-                        || checkedId == R.id.both_colors) {
-                    _alphaBar.setEnabled(true);
-                    _alphaBar.setProgress(Color.alpha(_fillColor));
-                    if (checkedId == R.id.both_colors)
-                        selectColor(_strokeColor);
-                } else {
-                    _alphaBar.setEnabled(false);
-                    _alphaBar.setProgress(255);
-                }
-            }
-        });
+        _selector.setOnCheckedChangeListener(
+                new RadioGroup.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(RadioGroup group,
+                            int checkedId) {
+                        if (checkedId == R.id.fill_color
+                                || checkedId == R.id.both_colors) {
+                            _alphaBar.setEnabled(true);
+                            _alphaBar.setProgress(Color.alpha(_fillColor));
+                            if (checkedId == R.id.both_colors)
+                                selectColor(_strokeColor);
+                        } else {
+                            _alphaBar.setEnabled(false);
+                            _alphaBar.setProgress(255);
+                        }
+                    }
+                });
 
         _alphaBar.setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
             @Override
@@ -384,8 +391,8 @@ public class ColorPalette extends LinearLayout {
     @Deprecated
     @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
     public ColorPalette(Context context, int initialColor, AttributeSet attrs,
-                        int defStyle,
-                        OnColorSelectedListener listener) {
+            int defStyle,
+            OnColorSelectedListener listener) {
         this(context, attrs, defStyle);
         _listener = listener;
         setColor(initialColor);
@@ -403,7 +410,7 @@ public class ColorPalette extends LinearLayout {
     @Deprecated
     @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
     public ColorPalette(Context context, int initialColor, AttributeSet attrs,
-                        OnColorSelectedListener listener) {
+            OnColorSelectedListener listener) {
         this(context, attrs);
         setColor(initialColor);
         setOnColorSelectedListener(listener);
@@ -420,7 +427,7 @@ public class ColorPalette extends LinearLayout {
     @Deprecated
     @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
     public ColorPalette(Context context, int initialColor,
-                        OnColorSelectedListener listener) {
+            OnColorSelectedListener listener) {
         this(context);
         setColor(initialColor);
         setOnColorSelectedListener(listener);
@@ -449,7 +456,7 @@ public class ColorPalette extends LinearLayout {
     @Deprecated
     @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
     public ColorPalette(Context context, int initialColor,
-                        boolean enableAlphaSlider) {
+            boolean enableAlphaSlider) {
         this(context);
         setShowAlpha(enableAlphaSlider);
         setColor(initialColor);

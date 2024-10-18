@@ -287,7 +287,7 @@ public class FtpUploader implements RequestListener {
         HTTPRequestManager.from(_context).execute(
                 request.createUploadFileRequest(), this);
 
-        Log.d(TAG, "Uploading file to " + request.toString());
+        Log.d(TAG, "Uploading file to " + request);
         // notify user
         File file = new File(request.getFileToSend());
         NotificationUtil.getInstance().postNotification(
@@ -339,7 +339,7 @@ public class FtpUploader implements RequestListener {
             if (resultData.getBoolean(
                     FtpStoreFileOperation.PARAM_FILEEXISTS, false)) {
                 Log.d(TAG, "Prompting user to overwrite on FTP server: " +
-                        initialRequest.toString());
+                        initialRequest);
                 AlertDialog.Builder b = new AlertDialog.Builder(_context);
                 b.setTitle("Confirm FTP Overwrite");
                 b.setMessage("Overwrite remote file: "
@@ -371,7 +371,7 @@ public class FtpUploader implements RequestListener {
                                 Log.d(TAG,
                                         "Cancelled overwrite on FTP server: "
                                                 +
-                                                initialRequest.toString());
+                                                initialRequest);
                                 dialog.dismiss();
                             }
                         });
@@ -473,7 +473,7 @@ public class FtpUploader implements RequestListener {
             Log.e(TAG, "FTP Upload Failed - Connection Data Error - "
                     + currentAttempts
                     + " Retry attempts failed for file: "
-                    + fileRequest.toString());
+                    + fileRequest);
 
             NotificationUtil.getInstance().postNotification(
                     fileRequest.getNotificationId(),
@@ -518,7 +518,7 @@ public class FtpUploader implements RequestListener {
                 fileRequest.createUploadFileRequest(), this);
         Log.d(TAG, "FTP Upload attempt #" + (currentAttempts + 1)
                 + " created for: "
-                + fileRequest.toString());
+                + fileRequest);
     }
 
     @Override

@@ -194,13 +194,13 @@ public class ClosedShapeGeoFenceMonitor extends GeoFenceMonitor {
         List<GeoFenceAlerting.Alert> ret = new ArrayList<>();
 
         if (FileSystemUtils.isEmpty(items)) {
-            Log.w(TAG, "No items to track: " + toString());
+            Log.w(TAG, "No items to track: " + this);
             return ret;
         }
 
         if (_fenceHandle < 1) {
             Log.w(TAG, "Failed to insert Polygon into SpatialCalculator: "
-                    + toString());
+                    + this);
             return ret;
         }
 

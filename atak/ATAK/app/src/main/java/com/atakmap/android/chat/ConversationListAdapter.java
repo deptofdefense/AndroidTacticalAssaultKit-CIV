@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import com.atakmap.android.contact.Contact;
 import com.atakmap.android.contact.Contacts;
+import com.atakmap.android.contact.FilteredContactsManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -447,7 +448,8 @@ class ConversationListAdapter extends BaseAdapter {
     public int getUnreadCount() {
         int unreadCount = 0;
         for (ChatLine line : chatLines)
-            if (!line.read)
+            if (!line.read && !FilteredContactsManager.getInstance()
+                    .isContactFiltered(line.senderUid))
                 unreadCount++;
         return unreadCount;
     }

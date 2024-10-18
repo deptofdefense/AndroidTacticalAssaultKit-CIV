@@ -54,6 +54,8 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.CameraController;
 
+import gov.tak.api.annotation.ModifierApi;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,7 +79,10 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
 
     private Marker _myDevice;
     private RecentlyAdded _swapped;
-    private final List<RecentlyAdded> _recentlyAddedList = new ArrayList<>();
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected final List<RecentlyAdded> _recentlyAddedList = new ArrayList<>();
     private final RecentlyAddedAdapter _recentlyAddedAdapter = new RecentlyAddedAdapter();
 
     private final SharedPreferences _prefs;
@@ -285,7 +290,10 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
         AtakBroadcast.getInstance().sendBroadcast(myIntent);
     }
 
-    static private class RecentlyAdded {
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    static protected class RecentlyAdded {
 
         double distance;
         double bearing;
@@ -351,7 +359,7 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
          * Get the map item w/ conversion to shape if necessary
          * @return Map item
          */
-        private MapItem getMapItem() {
+        protected MapItem getMapItem() {
             if (item != null && item.hasMetaValue("shapeUID")
                     && item.getGroup() != null) {
                 MapItem shape = item.getGroup().findItem("uid",
@@ -489,8 +497,10 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
                         MapView.InverseMode.RayCast);
             }
 
-            final double distance = GeoCalculations.distanceTo(currPoint.get(), ra.getPoint());
-            final double bearing = GeoCalculations.bearingTo(currPoint.get(), ra.getPoint());
+            final double distance = GeoCalculations.distanceTo(currPoint.get(),
+                    ra.getPoint());
+            final double bearing = GeoCalculations.bearingTo(currPoint.get(),
+                    ra.getPoint());
 
             ra.distance = distance;
             ra.bearing = ATAKUtilities.convertFromTrueToMagnetic(

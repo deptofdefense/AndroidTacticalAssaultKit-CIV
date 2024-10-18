@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "feature/SQLiteDriverDefinition.h"
 
 #include "formats/pfps/DrsDriverDefinition.h"
@@ -30,3 +31,4 @@ TAKErr SQLiteDriverDefinition::Spi::create(OGRDriverDefinition2Ptr& value, const
 }
 
 const char* SQLiteDriverDefinition::Spi::getType() const NOTHROWS { return SQLITE_DRIVER_NAME; }
+#endif

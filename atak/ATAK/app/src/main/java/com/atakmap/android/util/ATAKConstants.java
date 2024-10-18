@@ -5,35 +5,40 @@ import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.graphics.drawable.Drawable;
 
-import com.atakmap.android.gui.WebViewer;
 import com.atak.plugins.impl.AtakPluginRegistry;
 import com.atakmap.android.cot.detail.TakVersionDetailHandler;
+import com.atakmap.android.gui.WebViewer;
+import com.atakmap.android.location.LocationMapComponent;
 import com.atakmap.android.metrics.MetricsApi;
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.app.BuildConfig;
 import com.atakmap.app.R;
 import com.atakmap.app.system.FlavorProvider;
 import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
@@ -367,4 +372,75 @@ public class ATAKConstants {
             MetricsApi.record("about", b);
         }
     }
+
+    /**
+     * Returns general information about the system.
+     * @param context the context to be used
+     * @return a map with the keys guaranteed to be sorted.
+     */
+    public static Map<String, String> getGeneralInformation(Context context) {
+        final SharedPreferences prefs = PreferenceManager
+                .getDefaultSharedPreferences(context);
+
+        Map<String, String> retVal = new TreeMap<>();
+        retVal.put("id.wifi",
+                LocationMapComponent.fetchWifiMacAddress(context));
+        retVal.put("id.telephonyid",
+                LocationMapComponent.fetchTelephonyDeviceId(context));
+        retVal.put("id.serialno",
+                LocationMapComponent.fetchSerialNumber(context));
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                retVal.put("id.app",
+                        Settings.Secure.getString(context.getContentResolver(),
+                                Settings.Secure.ANDROID_ID));
+            }
+        } catch (Exception ignored) {
+        }
+
+        retVal.put("android.sdk",
+                Integer.toString(Build.VERSION.SDK_INT));
+        retVal.put("android.version",
+                System.getProperty("os.version"));
+        retVal.put("android.release", Build.VERSION.RELEASE);
+
+        retVal.put("device.model", Build.MODEL);
+        retVal.put("device.manufacturer", Build.MANUFACTURER);
+        retVal.put("device.hardware", Build.HARDWARE);
+        retVal.put("device.id", Build.ID);
+        retVal.put("device.brand", Build.BRAND);
+        retVal.put("device.host", Build.HOST);
+        retVal.put("device.display", Build.DISPLAY);
+        retVal.put("device.fingerprint", Build.FINGERPRINT);
+        retVal.put("device.build_time", Long.toString(Build.TIME));
+
+        retVal.put("tak.uid",
+                prefs.getString("bestDeviceUID", "unknown"));
+        retVal.put("tak.brand", ATAKConstants.getVersionBrand());
+        retVal.put("tak.flavor", BuildConfig.FLAVOR);
+        retVal.put("tak.type", BuildConfig.BUILD_TYPE);
+        retVal.put("tak.version", ATAKConstants.getFullVersionName());
+
+        int count = 0;
+        final File[] folders = context.getExternalCacheDirs();
+        for (File f : folders) {
+            if (f != null)
+                retVal.put("filesystem.mount." + count++, f.toString());
+        }
+
+        final Map<String, ?> keys = prefs.getAll();
+        count = 0;
+        for (Map.Entry<String, ?> entry : keys.entrySet()) {
+            final String key = entry.getKey();
+            if (key.startsWith(AtakPluginRegistry.pluginLoadedBasename)
+                    && entry.getValue() != null) {
+                retVal.put("plugin." + count++,
+                        key.replace("plugin.version.loaded.", "") + " "
+                                + entry.getValue().toString());
+            }
+        }
+
+        return retVal;
+    }
+
 }

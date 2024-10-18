@@ -69,7 +69,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
             List<MissionPackageContent> contents = manifest._contents
                     .getContents();
             if (contents == null || contents.size() < 1) {
-                Log.w(TAG, "Manifest has no contents: " + manifest.toString());
+                Log.w(TAG, "Manifest has no contents: " + manifest);
                 return manifest;
             }
 
@@ -89,7 +89,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
             Log.d(TAG,
                     "Extracting " + contents.size()
                             + " contents from Manifest: "
-                            + manifest.toString());
+                            + manifest);
             for (MissionPackageContent content : contents) {
                 if (content == null || !content.isValid()) {
                     Log.w(TAG,
@@ -102,7 +102,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
 
                 if (content.isIgnore()) {
                     Log.d(TAG,
-                            "Skipping ignore content: " + content.toString());
+                            "Skipping ignore content: " + content);
                     continue;
                 }
 
@@ -133,7 +133,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
                     } catch (IOException e) {
                         Log.e(TAG,
                                 "Failed to extract File: "
-                                        + content.toString());
+                                        + content);
                     }
                 }
             } // end content loop
@@ -265,7 +265,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
                 .getParameter(MissionPackageContent.PARAMETER_LOCALPATH);
         if (filepath == null || !filepath.isValid()) {
             Log.e(TAG, "Package content invalid local path for content: "
-                    + content.toString());
+                    + content);
             return false;
         }
 
@@ -380,7 +380,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
         if (uid == null || !uid.isValid()) {
             Log.e(TAG,
                     "Package content invalid UID for content: "
-                            + content.toString());
+                            + content);
             return null;
         }
 

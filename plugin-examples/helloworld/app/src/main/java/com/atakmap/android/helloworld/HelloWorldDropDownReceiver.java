@@ -233,6 +233,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
     private final Map<Integer, ExampleMultiLayer> exampleMultiLayers = new HashMap<>();
     private SimpleHeatMapLayer simpleHeatMapLayer;
 
+    private JoystickListener _joystickView;
+
 
     private LayerDownloadExample layerDownloader;
 
@@ -415,6 +417,9 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         this.pluginContext = context;
         this.mapOverlay = overlay;
         final Activity parentActivity = (Activity) mapView.getContext();
+
+        _joystickView = new JoystickListener();
+
         csr = new CotServiceRemote();
         csr.setOutputsChangedListener(_outputsChangedListener);
 
@@ -2290,6 +2295,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         } catch (Exception e) {
             Log.e(TAG, "error", e);
         }
+
+        _joystickView.dispose();
 
         if (issTimer != null) {
             issTimer.cancel();

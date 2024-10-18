@@ -17,9 +17,9 @@
  lib_LTLIBRARIES = libminizip.la liburiparser.la
 -noinst_LTLIBRARIES = libgtest.la libgtest_main.la
 +#noinst_LTLIBRARIES = libgtest.la libgtest_main.la
- minizip_root = zlib-1.2.3
- minizip = $(minizip_root)/contrib/minizip
- minizipinc = $(includedir)/kml/third_party/$(minizip)
+ 
+ #minizip_root = zlib-1.2.3
+ #minizip = $(minizip_root)/contrib/minizip
 @@ -717,10 +717,10 @@
  	  rm -f $${locs}; \
  	}

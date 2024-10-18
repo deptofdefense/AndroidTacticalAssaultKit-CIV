@@ -2,13 +2,16 @@
 package com.atakmap.app.preferences;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 
+import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
+import com.atakmap.comms.app.CotStreamListActivity;
 import com.atakmap.coremap.log.Log;
 
 public class NetworkPreferenceFragment extends AtakPreferenceFragment implements
@@ -35,6 +38,14 @@ public class NetworkPreferenceFragment extends AtakPreferenceFragment implements
             case "tadiljSettings":
                 showScreen(new TadilJPreferenceFragment());
                 break;
+            case "serverConnections":
+                if (CotMapComponent.hasServer()) {
+                    startActivity(new Intent(getActivity(),
+                            CotStreamListActivity.class));
+                } else {
+                    showScreen(new PromptNetworkPreferenceFragment());
+                }
+                break;
         }
 
         return true;
@@ -51,6 +62,9 @@ public class NetworkPreferenceFragment extends AtakPreferenceFragment implements
 
         Preference tadiljSettings = findPreference("tadiljSettings");
         tadiljSettings.setOnPreferenceClickListener(this);
+
+        Preference serverConnections = findPreference("serverConnections");
+        serverConnections.setOnPreferenceClickListener(this);
     }
 
     @Override

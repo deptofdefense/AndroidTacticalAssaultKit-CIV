@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/model/GLSceneFactory.h"
 
 #include <set>
@@ -128,3 +129,4 @@ TAKErr TAK::Engine::Renderer::Model::GLSceneFactory_unregisterSpi(const GLSceneS
 
     return TE_InvalidArg;
 }
+#endif

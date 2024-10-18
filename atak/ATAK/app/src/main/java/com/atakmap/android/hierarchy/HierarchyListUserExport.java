@@ -87,7 +87,7 @@ class HierarchyListUserExport extends HierarchyListUserSelect {
         }
 
         if (selected.size() < 1) {
-            Log.w(TAG, "No exportables selected " + marshal.toString());
+            Log.w(TAG, "No exportables selected " + marshal);
             NotificationUtil.getInstance().postNotification(
                     R.drawable.ic_network_error_notification_icon,
                     NotificationUtil.RED,
@@ -100,7 +100,7 @@ class HierarchyListUserExport extends HierarchyListUserSelect {
         }
 
         Log.d(TAG, "Exporting: " + selected.size() + " items to " +
-                marshal.toString());
+                marshal);
 
         List<Exportable> exports = new ArrayList<>();
         Exportable export;

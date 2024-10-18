@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/raster/mosaic/GLMosaicMapLayer.h"
 #include "feature/LegacyAdapters.h"
 #include "feature/SpatialCalculator2.h"
@@ -10,7 +11,7 @@
 #include "renderer/core/GLGlobeSurfaceRenderer.h"
 #include "renderer/core/GLMapRenderGlobals.h"
 #include "renderer/raster/RasterDataAccessControl.h"
-#include "renderer/raster/tilereader/GLQuadTileNode2.h"
+#include "renderer/raster/tilereader/GLQuadTileNode3.h"
 #include "util/ConfigOptions.h"
 #include "util/Filter.h"
 
@@ -40,7 +41,7 @@ namespace {
          * <I>initialized</I>) during the query. The renderables should not be associated with
          * any of the currently rendered frames as per {@link #loaded}.
          */
-        std::list<std::pair<MosaicDatabase2::Frame, GLQuadTileNode2Ptr>> frames;
+        std::list<std::pair<MosaicDatabase2::Frame, GLQuadTileNode3Ptr>> frames;
         /** calculates occlusion */
         Feature::SpatialCalculator2 spatialCalc;
         /** list of currently rendered frame URIs */
@@ -174,7 +175,7 @@ Util::TAKErr GLMosaicMapLayer::toString(TAK::Engine::Port::String &value) NOTHRO
     return TE_Ok;
 }
 
-Util::TAKErr GLMosaicMapLayer::createRootNode(GLQuadTileNode2Ptr &value, const MosaicDatabase2::Frame &frame) NOTHROWS
+Util::TAKErr GLMosaicMapLayer::createRootNode(GLQuadTileNode3Ptr &value, const MosaicDatabase2::Frame &frame) NOTHROWS
 {
     std::string tileCacheDatabase;
     if (this->info_->getExtraData("tilecacheDir") != nullptr) {
@@ -196,19 +197,25 @@ Util::TAKErr GLMosaicMapLayer::createRootNode(GLQuadTileNode2Ptr &value, const M
     if (this->textureCacheEnabled)
         Core::GLMapRenderGlobals_getTextureCache2(&glopts.textureCache, *this->surface_);
 
-    TileReader::GLQuadTileNode2Ptr retval(nullptr, nullptr);
+    TAK::Engine::Renderer::Core::GLMapRenderable2Ptr retval(nullptr, nullptr);
     GLQuadTileNodeInitializer initializer(this);
-    TAKErr code = TileReader::GLQuadTileNode2::create(retval, this->surface_, &frame, opts, glopts, initializer);
+    TAKErr code = TileReader::GLQuadTileNode3_create(retval, *this->surface_, frame, opts, glopts, initializer);
     TE_CHECKRETURN_CODE(code);
-    value = std::move(retval);
+    value = GLQuadTileNode3Ptr(static_cast<GLQuadTileNode3 *>(retval.release()), Memory_deleter_const<GLQuadTileNode3>);
     return TE_Ok;
 }
 
 void GLMosaicMapLayer::release() NOTHROWS
 {
+    for (const auto& r : this->visibleFrames)
+        r.second->release();
     this->visibleFrames.clear();
+    for (const auto& r : this->zombie_frames_)
+        r.second->release();
     this->zombie_frames_.clear();
     this->resurrected_frames_.clear();
+    for (const auto& r : this->resurrected_frames_)
+        r->release();
     GLAsynchronousMapRenderable3::release();
 }
 
@@ -247,7 +254,7 @@ void GLMosaicMapLayer::draw(const GLGlobeBase &view, const int renderPass) NOTHR
     bool allResolved = true;
     iter = this->visibleFrames.begin();
     while (iter != this->visibleFrames.end()) {
-        allResolved &= (iter->second->getState() == GLQuadTileNode2::State::RESOLVED);
+        allResolved &= (iter->second->getState() == GLQuadTileNode3::State::RESOLVED);
         iter++;
     }
 
@@ -256,14 +263,14 @@ void GLMosaicMapLayer::draw(const GLGlobeBase &view, const int renderPass) NOTHR
     while (iter != this->zombie_frames_.end()) {
         auto zombieIter = iter;
         iter++;
-        if (allResolved || zombieIter->second->getState() == GLQuadTileNode2::State::UNRESOLVED ||
-            zombieIter->second->getState() == GLQuadTileNode2::State::UNRESOLVABLE ||
+        if (allResolved || zombieIter->second->getState() == GLQuadTileNode3::State::UNRESOLVED ||
+            zombieIter->second->getState() == GLQuadTileNode3::State::UNRESOLVABLE ||
             !intersects(this->prepared_state_, zombieIter->first)) {
             // all visible frames are resolved, the zombie frame has no
             // data or has fallen out of the ROI; release it
             zombieIter->second->release();
             this->zombie_frames_.erase(zombieIter);
-        } else if (zombieIter->second->getState() == GLQuadTileNode2::State::RESOLVING) {
+        } else if (zombieIter->second->getState() == GLQuadTileNode3::State::RESOLVING) {
             zombieIter->second->suspend();
         }
     }
@@ -346,8 +353,8 @@ Util::TAKErr GLMosaicMapLayer::updateRenderableLists(QueryContext &pendingDataOp
     SortedFrameMap swap(frameSort);
 
     // move any previously visible nodes into our nowVisible map
-    for (std::pair<MosaicDatabase2::Frame, GLQuadTileNode2Ptr> &framePair : pendingData.frames) {
-        std::shared_ptr<GLQuadTileNode2> mapRenderable;
+    for (auto &framePair : pendingData.frames) {
+        std::shared_ptr<GLQuadTileNode3> mapRenderable;
         SortedFrameMap::iterator iter;
         if ((iter = this->visibleFrames.find(framePair.first)) != this->visibleFrames.end()) {
             mapRenderable = std::move(iter->second);
@@ -369,7 +376,7 @@ Util::TAKErr GLMosaicMapLayer::updateRenderableLists(QueryContext &pendingDataOp
             // the frame is not in any of the lists and intersects the view,
             // create a node for it
             // not checking error intentionally; error will be handled with null check below
-            GLQuadTileNode2Ptr root(nullptr, nullptr);
+            GLQuadTileNode3Ptr root(nullptr, nullptr);
             this->createRootNode(root, framePair.first);
             if (root.get())
                 mapRenderable = std::move(root);
@@ -413,15 +420,15 @@ Util::TAKErr GLMosaicMapLayer::updateRenderableLists(QueryContext &pendingDataOp
         releaseIter++;
         // if the frame marked for release intersects the current ROI, make
         // it a zombie
-        if (curIter->second->getState() != GLQuadTileNode2::State::UNRESOLVED &&
-            curIter->second->getState() != GLQuadTileNode2::State::UNRESOLVABLE && intersects(this->target_state_, curIter->first)) {
+        if (curIter->second->getState() != GLQuadTileNode3::State::UNRESOLVED &&
+            curIter->second->getState() != GLQuadTileNode3::State::UNRESOLVABLE && intersects(this->target_state_, curIter->first)) {
             this->zombie_frames_.insert(SortedFrameMap::value_type(curIter->first, std::move(curIter->second)));
             this->visibleFrames.erase(curIter);
         }
     }
 
     // retain a reference to the renderables that need to be released
-    std::unique_ptr<std::list<std::shared_ptr<GLQuadTileNode2>>> releaseList(new std::list<std::shared_ptr<GLQuadTileNode2>>());
+    std::unique_ptr<std::list<std::shared_ptr<GLQuadTileNode3>>> releaseList(new std::list<std::shared_ptr<GLQuadTileNode3>>());
     for (auto iter = this->visibleFrames.begin(); iter != this->visibleFrames.end(); iter++) {
         releaseList->push_back(std::move(iter->second));
     }
@@ -456,7 +463,7 @@ Util::TAKErr GLMosaicMapLayer::query(QueryContext &result, const GLGlobeBase::St
 
     auto &localQuery = state;
     if (state.crossesIDL) {
-        std::map<MosaicDatabase2::Frame, GLQuadTileNode2Ptr, decltype(frameSort) *> frameMap(frameSort);
+        std::map<MosaicDatabase2::Frame, GLQuadTileNode3Ptr, decltype(frameSort) *> frameMap(frameSort);
         TAKErr code;
 
         GLGlobeBase::State hemi;
@@ -470,7 +477,7 @@ Util::TAKErr GLMosaicMapLayer::query(QueryContext &result, const GLGlobeBase::St
         hemi.lowerLeft = GeoPoint2(hemi.southBound, hemi.westBound);
         code = this->queryImpl(retval, hemi);
         TE_CHECKRETURN_CODE(code);
-        using mvIter = std::move_iterator<std::list<std::pair<MosaicDatabase2::Frame, GLQuadTileNode2Ptr>>::iterator>;
+        using mvIter = std::move_iterator<std::list<std::pair<MosaicDatabase2::Frame, GLQuadTileNode3Ptr>>::iterator>;
         frameMap.insert(mvIter(retval.frames.begin()), mvIter(retval.frames.end()));
 
         // reset
@@ -489,7 +496,7 @@ Util::TAKErr GLMosaicMapLayer::query(QueryContext &result, const GLGlobeBase::St
 
         retval.frames.clear();
 
-        using mapMvIter = std::move_iterator<std::map<MosaicDatabase2::Frame, GLQuadTileNode2Ptr>::iterator>;
+        using mapMvIter = std::move_iterator<std::map<MosaicDatabase2::Frame, GLQuadTileNode3Ptr>::iterator>;
         retval.frames.insert(retval.frames.end(), mapMvIter(frameMap.begin()), mapMvIter(frameMap.end()));
         return TE_Ok;
     } else {
@@ -578,8 +585,9 @@ TAKErr GLMosaicMapLayer::constructQueryParams(std::list<MosaicDatabase2::QueryPa
     TAKErr code(TE_Ok);
 
     MosaicDatabase2::QueryParameters base;
-    atakmap::feature::Geometry *geo =
-        DatasetDescriptor::createSimpleCoverage(localQuery.upperLeft, localQuery.upperRight, localQuery.lowerRight, localQuery.lowerLeft);
+    Feature::GeometryPtr geo(
+        DatasetDescriptor::createSimpleCoverage(localQuery.upperLeft, localQuery.upperRight, localQuery.lowerRight, localQuery.lowerLeft),
+        atakmap::feature::destructGeometry);
     code = Feature::LegacyAdapters_adapt(base.spatialFilter, *geo);
     TE_CHECKRETURN_CODE(code);
 
@@ -694,7 +702,7 @@ TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const GLGlobeBase::St
                 code = MosaicDatabase2::Frame::createFrame(frame, *result);
                 TE_CHECKBREAK_CODE(code);
                 retval.frames.push_back(
-                    std::pair<MosaicDatabase2::Frame, GLQuadTileNode2Ptr>(*frame, GLQuadTileNode2Ptr(nullptr, nullptr)));
+                    std::pair<MosaicDatabase2::Frame, GLQuadTileNode3Ptr>(*frame, GLQuadTileNode3Ptr(nullptr, nullptr)));
 
                 if (coverageHandle == 0) {
                     coverageHandle = frameHandle;
@@ -757,7 +765,7 @@ TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const GLGlobeBase::St
 
     // instantiate (but do not initialize) renderables for all frames that
     // are not currently loaded
-    for (std::pair<MosaicDatabase2::Frame, GLQuadTileNode2Ptr> &framePair : retval.frames) {
+    for (auto &framePair : retval.frames) {
         if (this->cancelled_) {
             break;
         }
@@ -767,7 +775,7 @@ TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const GLGlobeBase::St
         if (retval.loaded.find(resolved.get()) != retval.loaded.end())
             continue;
 
-        GLQuadTileNode2Ptr renderable(nullptr, nullptr);
+        GLQuadTileNode3Ptr renderable(nullptr, nullptr);
         this->createRootNode(renderable, framePair.first);
         if (renderable != nullptr)
             framePair.second = std::move(renderable);
@@ -974,7 +982,7 @@ TAKErr GLMosaicMapLayer::RasterDataAccessControlImpl::accessRasterData(
     const double latitude = p.latitude;
     const double longitude = p.longitude;
 
-    GLQuadTileNode2 *r;
+    GLQuadTileNode3 *r;
     Math::Point2<double> img(0.0, 0.0);
     for (auto reverse = owner->visibleFrames.rbegin(); reverse != owner->visibleFrames.rend(); reverse++) {
         if (reverse->first.minLat > latitude || reverse->first.maxLat < latitude)
@@ -1033,9 +1041,10 @@ namespace {
 
     void renderThreadCleaner(void *opaque) NOTHROWS
     {
-        std::unique_ptr<std::list<std::shared_ptr<GLQuadTileNode2>>> releaseList(static_cast<std::list<std::shared_ptr<GLQuadTileNode2>> *>(opaque));
+        std::unique_ptr<std::list<std::shared_ptr<GLQuadTileNode3>>> releaseList(static_cast<std::list<std::shared_ptr<GLQuadTileNode3>> *>(opaque));
         for (auto iter = releaseList->begin(); iter != releaseList->end(); iter++)
             (*iter)->release();
     }
 
 }  // namespace
+#endif

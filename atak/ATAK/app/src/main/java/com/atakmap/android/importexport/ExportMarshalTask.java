@@ -89,7 +89,7 @@ public class ExportMarshalTask extends AsyncTask<Void, Integer, Boolean>
             publishProgress(99);
             return true;
         } catch (IOException | FormatNotSupportedException e) {
-            Log.w(TAG, "Failed to finalize " + _marshal.toString(), e);
+            Log.w(TAG, "Failed to finalize " + _marshal, e);
             return false;
         }
     }

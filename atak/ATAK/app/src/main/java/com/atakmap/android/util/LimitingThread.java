@@ -2,7 +2,7 @@
 package com.atakmap.android.util;
 
 import com.atakmap.coremap.log.Log;
-import com.atakmap.util.Disposable;
+import gov.tak.api.util.Disposable;
 
 /**
  * Provides a processing capability where the action will only be run as fast as it can no matter how many calls to 

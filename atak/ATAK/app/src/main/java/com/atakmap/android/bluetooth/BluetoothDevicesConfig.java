@@ -128,7 +128,7 @@ public class BluetoothDevicesConfig {
         File config = FileSystemUtils.getItem(CONFIG_FILE_PATH);
         Log.d(TAG,
                 "Saving Bluetooth Config to file: " + config.getAbsolutePath()
-                        + ", contents=" + toString());
+                        + ", contents=" + this);
 
         Serializer serializer = new Persister();
         try (FileOutputStream fos = IOProviderFactory.getOutputStream(config)) {

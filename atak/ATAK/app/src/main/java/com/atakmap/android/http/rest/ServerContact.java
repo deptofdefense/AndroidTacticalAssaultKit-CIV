@@ -4,6 +4,8 @@ package com.atakmap.android.http.rest;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.http.rest.request.GetClientListRequest;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -34,22 +36,22 @@ public class ServerContact implements Parcelable {
         Disconnected
     }
 
-    private NetConnectString server;
+    private final NetConnectString server;
 
-    private String uid;
-    private String callsign;
+    private final String uid;
+    private final String callsign;
 
     /**
      * Connected or Disconnected
      */
-    private LastStatus lastStatus;
+    private final LastStatus lastStatus;
 
-    private long lastEventTime;
+    private final long lastEventTime;
 
     /**
      * Time this status was obtained from the server
      */
-    private long syncTime;
+    private final long syncTime;
 
     /**
      * Last reported position update
@@ -155,6 +157,7 @@ public class ServerContact implements Parcelable {
         return server.equals(rhsc.server);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return uid + "/" + callsign;
@@ -207,11 +210,19 @@ public class ServerContact implements Parcelable {
         return 0;
     }
 
+    /**
+     * Create a server contact from a JSON object.
+     * @param server the network connect string fro the server
+     * @param syncTime the time of the sync in millis since epoch
+     * @param obj the json object used to create the ServerContact
+     * @return the server contact that corresponds with the json object
+     * @throws JSONException if an error is encountered with the json object
+     */
     public static ServerContact fromJSON(NetConnectString server,
             long syncTime, JSONObject obj) throws JSONException {
 
         String lastEventTimeString = obj.getString("lastEventTime");
-        long lastEventTime = -1;
+        long lastEventTime;
         try {
             lastEventTime = KMLUtil.KMLDateTimeFormatterMillis.get()
                     .parse(lastEventTimeString).getTime();
@@ -221,7 +232,7 @@ public class ServerContact implements Parcelable {
             throw new JSONException("Unable to parse lastEventTime");
         }
 
-        LastStatus lastStatus = null;
+        LastStatus lastStatus;
         try {
             lastStatus = LastStatus.valueOf(obj.getString("lastStatus"));
         } catch (IllegalArgumentException e) {
@@ -242,9 +253,9 @@ public class ServerContact implements Parcelable {
 
     /**
      * Convert JSON to list of results
-     * @param json
-     * @return
-     * @throws JSONException
+     * @param json the result json
+     * @return an array of server contacts from the results
+     * @throws JSONException an exception if the json is not valid
      */
     public static ArrayList<ServerContact> fromResultJSON(
             NetConnectString server, long syncTime, JSONObject json)

@@ -47,8 +47,6 @@ import java.util.Map;
 /**
  * Dialog to search preferences
  * See loadIndex() for parsing/indexing available preferences
- *
- * 
  */
 public class PreferenceSearchDialog
         implements DialogInterface.OnDismissListener {
@@ -92,7 +90,21 @@ public class PreferenceSearchDialog
         add(masterlist, CustomActionBarFragment.index(context));
         add(masterlist, DisplayPrefsFragment.index(context));
         add(masterlist, NetworkPreferenceFragment.index(context));
-
+        add(masterlist, SpecificPreferenceFragment.index(context));
+        add(masterlist, CallSignPreferenceFragment.index(context));
+        add(masterlist, CallSignAndDeviceFragment.index(context));
+        add(masterlist, DexOptionsPreferenceFragment.index(context));
+        add(masterlist, DeviceDetailsPreferenceFragment.index(context));
+        add(masterlist, LegacyPreferencesFragment.index(context));
+        add(masterlist, OtherDisplayPreferenceFragment.index(context));
+        add(masterlist, PointDroppingBehaviorPreferenceFragment.index(context));
+        add(masterlist, StaleDataPreferenceFragment.index(context));
+        add(masterlist, SelfCoordinatePreferenceFragment.index(context));
+        add(masterlist, ThreeDRenderingFragment.index(context));
+        add(masterlist, UserTouchPreferenceFragment.index(context));
+        add(masterlist, UsabilityPreferenceFragment.index(context));
+        add(masterlist, PromptNetworkPreferenceFragment.index(context));
+        add(masterlist, LockingBehaviorFragment.index(context));
     }
 
     /**
@@ -106,7 +118,7 @@ public class PreferenceSearchDialog
         _inflater = LayoutInflater.from(context);
         View _dialogView = _inflater
                 .inflate(com.atakmap.app.R.layout.search_settings, null);
-        ListView list = _dialogView.findViewById(R.id.settings_list);
+        ListView list = _dialogView.findViewById(android.R.id.list);
         _adapter = new SearchIndexAdapter(list);
 
         _search = _dialogView.findViewById(R.id.settings_search);
@@ -153,7 +165,6 @@ public class PreferenceSearchDialog
         //InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         //if (imm != null)
         //    imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, 0);
-
     }
 
     @Override

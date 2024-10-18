@@ -80,7 +80,7 @@ public class ContactListAdapter extends BaseAdapter implements
     private boolean sortByLocation = false;
     private MultiFilter filter;
     private final SharedPreferences prefs;
-    private boolean showAll, unreadOnly;
+    private boolean showAll, unreadOnly, hideFiltered;
     private final Activity ctx;
     private final MapView mapView;
     private boolean checkBoxActive = false;
@@ -132,7 +132,8 @@ public class ContactListAdapter extends BaseAdapter implements
         DEL_FROM_GROUP(true, true), // Delete users from group
         SEARCH(false, true), //Search contacts
         FAVORITES(false, true), // List of favorite contacts
-        HISTORY; //History view
+        HISTORY, //History view
+        FILTER; //filter out contacts
 
         // True if this mode is a group modifier
         public final boolean groupMode;
@@ -165,6 +166,8 @@ public class ContactListAdapter extends BaseAdapter implements
         this.ctx = (Activity) context;
         prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         this.showAll = !prefs.getBoolean(FOVFilter.PREF, false);
+        selectedUids.addAll(
+                FilteredContactsManager.getInstance().getFilteredContacts());
     }
 
     public ContactListAdapter(Contacts contacts, Context context) {
@@ -207,6 +210,9 @@ public class ContactListAdapter extends BaseAdapter implements
                     .findViewById(R.id.contact_list_defaultComms_btn);
             holder.extraContainer = v.findViewById(
                     R.id.contact_list_extras_container);
+            holder.filterCheckBox = v
+                    .findViewById(R.id.contact_list_filter_checkbox);
+            holder.filterCheckBox.setVisibility(View.GONE);
 
             v.setTag(holder);
         } else {
@@ -412,7 +418,7 @@ public class ContactListAdapter extends BaseAdapter implements
                 } else {
                     //We don't have enough info to find the contact (should never happen)
                     c = new IndividualContact(name, uuid);
-                    Log.w(TAG, "Unable to find contact: " + c.toString());
+                    Log.w(TAG, "Unable to find contact: " + c);
                     Bundle tempExtras = c.getExtras();
                     tempExtras.putSerializable("updateStatus", UpdateStatus.NA);
                     c.setExtras(tempExtras);
@@ -437,7 +443,7 @@ public class ContactListAdapter extends BaseAdapter implements
                 } else if (fc instanceof IndividualContact) {
                     IndividualContact individual = (IndividualContact) fc;
                     Log.d(TAG, "Profile button clicked for individual: "
-                            + individual.toString());
+                            + individual);
                     individual.zoom();
                     ActionBroadcastData.broadcast(individual
                             .getDefaultProfile());
@@ -470,6 +476,9 @@ public class ContactListAdapter extends BaseAdapter implements
                 holder.extraContainer.setVisibility(View.VISIBLE);
                 holder.extraContainer.addView(extraView, 0);
             }
+
+            holder.filterCheckBox.setChecked(
+                    FilteredContactsManager.getInstance().isContactFiltered(c));
         }
 
         //update default comms button
@@ -482,6 +491,18 @@ public class ContactListAdapter extends BaseAdapter implements
         } else {
             holder.profileBtn.setVisibility(View.VISIBLE);
             holder.profileBtn.setImageResource(R.drawable.ic_profile_white);
+            updateTextColor(c, holder.callsignTextView);
+        }
+    }
+
+    /**
+     * Update text color based on filter status
+     */
+    public void updateTextColor(Contact c, TextView v) {
+        if (FilteredContactsManager.getInstance().isContactFiltered(c)) {
+            v.setTextColor(Color.GRAY);
+        } else {
+            v.setTextColor(Color.WHITE);
         }
     }
 
@@ -540,6 +561,8 @@ public class ContactListAdapter extends BaseAdapter implements
                         break;
                 }
                 int totalUnread = individual.getUnreadCount();
+                if (FilteredContactsManager.getInstance().isContactFiltered(c))
+                    totalUnread = 0;
                 if (totalUnread == 0 || unreadConnector == null) {
                     //no unread, display default comms icon w/no unread overlay
                     updateConnectorView(individual, defaultConnector,
@@ -549,7 +572,7 @@ public class ContactListAdapter extends BaseAdapter implements
                         public void onClick(View v) {
                             Log.d(TAG,
                                     "Default comms clicked for individual: "
-                                            + individual.toString());
+                                            + individual);
                             if (!CotMapComponent
                                     .getInstance()
                                     .getContactConnectorMgr()
@@ -557,7 +580,7 @@ public class ContactListAdapter extends BaseAdapter implements
                                             defaultConnector)) {
                                 Log.w(TAG,
                                         "No connector handler available for: "
-                                                + individual.toString());
+                                                + individual);
                                 //TODO notify user?
                             }
                         }
@@ -579,7 +602,7 @@ public class ContactListAdapter extends BaseAdapter implements
                             public void onClick(View v) {
                                 Log.d(TAG,
                                         "Multiple comms clicked for individual: "
-                                                + individual.toString());
+                                                + individual);
                                 ActionBroadcastData intent = individual
                                         .getDefaultProfile();
                                 if (intent != null
@@ -605,10 +628,9 @@ public class ContactListAdapter extends BaseAdapter implements
                             public void onClick(View v) {
                                 Log.d(TAG,
                                         "Unread comms clicked for individual: "
-                                                + individual.toString()
+                                                + individual
                                                 + ", "
-                                                + funreadConnector
-                                                        .toString());
+                                                + funreadConnector);
                                 if (!CotMapComponent
                                         .getInstance()
                                         .getContactConnectorMgr()
@@ -616,8 +638,7 @@ public class ContactListAdapter extends BaseAdapter implements
                                                 funreadConnector)) {
                                     Log.w(TAG,
                                             "No connector handler available for: "
-                                                    + individual
-                                                            .toString());
+                                                    + individual);
                                     //TODO notify user?
                                 }
                             }
@@ -699,6 +720,8 @@ public class ContactListAdapter extends BaseAdapter implements
 
         //display unread count for default connector
         int connectorUnread = individual.getUnreadCount(connector);
+        if (FilteredContactsManager.getInstance().isContactFiltered(individual))
+            connectorUnread = 0;
         ATAKUtilities.SetIcon(context, view, connector.getIconUri(),
                 Color.WHITE);
 
@@ -913,6 +936,17 @@ public class ContactListAdapter extends BaseAdapter implements
         }
     }
 
+    public List<Contact> getUnselected() {
+        synchronized (this.selectedUids) {
+            List<Contact> unselected = new ArrayList<Contact>();
+            for (Contact c : contacts.getAllContacts()) {
+                if (!this.selectedUids.contains(c.contactUUID))
+                    unselected.add(c);
+            }
+            return unselected;
+        }
+    }
+
     public List<String> getSelectedUids() {
         synchronized (this.selectedUids) {
             return new ArrayList<>(this.selectedUids);
@@ -934,6 +968,7 @@ public class ContactListAdapter extends BaseAdapter implements
         ImageButton profileBtn = null;
         ImageButton defaultCommsBtn = null;
         LinearLayout extraContainer = null;
+        CheckBox filterCheckBox = null;
     }
 
     @Override
@@ -989,6 +1024,20 @@ public class ContactListAdapter extends BaseAdapter implements
         unreadOnly(on, false);
     }
 
+    /**
+     * Toggle filtering of contacts
+     *
+     * @param show True to show all filtered contacts, false to show all
+     */
+    public void hideFiltered(boolean show) {
+        if (this.hideFiltered != show) {
+            this.hideFiltered = show;
+            this.prefs.edit().putBoolean(FilteredContactsFilter.PREF, !show)
+                    .apply();
+            refreshListImpl();
+        }
+    }
+
     private void refreshFilter() {
         List<HierarchyListFilter> filterList = new ArrayList<>();
         // Contact type filtering
@@ -1015,6 +1064,8 @@ public class ContactListAdapter extends BaseAdapter implements
         if (this.unreadOnly)
             filterList.add(new UnreadFilter(this.sortMode));
 
+        if (this.hideFiltered)
+            filterList.add(new FilteredContactsFilter(this.sortMode));
         // Allow history mode to display locked root user groups
         GroupContact currList = getCurrentList();
         if (currList.getUID().equals(Contacts.USER_GROUPS))

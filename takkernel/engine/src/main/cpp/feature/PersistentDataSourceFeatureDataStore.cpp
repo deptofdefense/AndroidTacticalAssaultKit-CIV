@@ -1,3 +1,4 @@
+#ifdef MSVC
 ////============================================================================
 ////
 ////    FILE:           PersistentDataSourceFeatureDataStore.cpp
@@ -1894,3 +1895,4 @@ PersistentDataSourceFeatureDataStore::setFeatureVisibleImpl (int64_t featureID,
 }                                       // Close feature namespace.
 }                                       // Close atakmap namespace.
 
+#endif

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "LASSceneSpi.h"
 #include "LASSceneInfoSpi.h"
 #include "port/STLVectorAdapter.h"
@@ -218,3 +219,4 @@ TAKErr LASSceneSPI::create(ScenePtr &scene, const char *URI, ProcessingCallback 
 
     return cancel ? TE_Canceled : TE_Ok;
 }
+#endif

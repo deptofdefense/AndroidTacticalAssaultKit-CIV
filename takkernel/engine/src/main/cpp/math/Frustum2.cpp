@@ -123,6 +123,39 @@ Frustum2::Plane::Plane(const Vector4<double> &normal_, double dist_) :
                 return true;
             }
 
+bool Frustum2::intersects(bool &inside, const AABB& aabb) const NOTHROWS
+{
+    // derived from "Foundations of Game Engine Development"
+    Vector4<double> vd(0, 0, 0);
+    vd.x = (aabb.maxX + aabb.minX) / 2.0;
+    vd.y = (aabb.maxY + aabb.minY) / 2.0;
+    vd.z = (aabb.maxZ + aabb.minZ) / 2.0;
+    Point2<double> size;
+    size.x = (aabb.maxX - aabb.minX) / 2.0;
+    size.y = (aabb.maxY - aabb.minY) / 2.0;
+    size.z = (aabb.maxZ - aabb.minZ) / 2.0;
+
+    double dist[6u];
+    for (std::size_t i = 0u; i < 6u; i++) {
+        const Plane &g = frustum[i];
+        // compute radius relative to plane
+        const double rg = fabs(g.normal.x*size.x) + fabs(g.normal.y*size.y) + fabs(g.normal.z*size.z);
+        // perform bounding sphere style test
+        dist[i] = distance(g, vd);
+        if (dist[i] < -rg)
+            return false;
+    }
+    // assume inside
+    inside = true;
+    double dir = dist[0u]; // init to first plane distance
+    for (std::size_t i = 1u; i < 6u; i++) {
+        // flipping of sign indicates other side of plane, 0 indicates touch
+        dir *= dist[i];
+        inside &= dir > 0;
+    }
+    return true;
+}
+
             double Frustum2::depthIfInside(const Sphere2& s) const NOTHROWS
             {
                 double dist = NAN;

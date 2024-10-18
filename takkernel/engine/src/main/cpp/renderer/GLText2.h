@@ -49,7 +49,7 @@ namespace TAK {
                 TextFormatParams(const float size) NOTHROWS;
                 TextFormatParams(const char* fontName, const float size) NOTHROWS;
             public :
-                const char *fontName;
+                TAK::Engine::Port::String fontName;
                 float size;
                 bool bold;
                 bool italic;

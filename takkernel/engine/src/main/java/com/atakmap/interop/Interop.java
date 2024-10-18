@@ -320,7 +320,7 @@ public abstract class Interop<T> {
 
         @Override
         public T getObject(long pointer) {
-            if(this.getObject != null)
+            if(this.getObject == null)
                 return null;
             try {
                 return (T) getObject.invoke(null, pointer);

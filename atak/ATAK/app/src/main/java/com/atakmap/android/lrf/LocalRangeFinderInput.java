@@ -45,7 +45,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
-import com.atakmap.util.Disposable;
+import gov.tak.api.util.Disposable;
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 

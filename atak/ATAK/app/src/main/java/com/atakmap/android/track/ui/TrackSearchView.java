@@ -657,7 +657,7 @@ public class TrackSearchView extends LinearLayout implements
                     if (trackUsers.contains(curTrackUser)) {
                         Log.d(TAG,
                                 "Skipping individual contact already processed: "
-                                        + curTrackUser.toString());
+                                        + curTrackUser);
                         continue;
                     }
 

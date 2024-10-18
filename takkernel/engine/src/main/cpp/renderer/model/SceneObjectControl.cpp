@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/model/SceneObjectControl.h"
 
 using namespace TAK::Engine::Renderer::Model;
@@ -12,3 +13,4 @@ const char *TAK::Engine::Renderer::Model::SceneObjectControl_getType() NOTHROWS
 {
     return "TAK.Engine.Renderer.Model.SceneObjectControl";
 }
+#endif

@@ -1,12 +1,12 @@
 
 package com.atakmap.app.preferences;
 
-import com.atakmap.android.preference.PreferenceSearchIndex;
-import com.atakmap.coremap.log.Log;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -22,15 +22,15 @@ import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.view.View;
-import android.app.Activity;
-import android.content.res.Resources;
+
 import com.atakmap.android.gui.ColorPicker;
 import com.atakmap.android.icons.Icon2525cIconAdapter;
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
+import com.atakmap.coremap.log.Log;
 
 /**
- *
  * Handles the preference fragment for the GPS icon customization
  * User can select from 3 states, default coloring, using the current team color, or setting a custom
  * color using a RGB color picker. when the team/custom color is selected a file is created
@@ -103,6 +103,9 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
         Preference changeColorPreference = this
                 .findPreference("change_custom_gps_color");
 
+        Preference changeOutlineColorPreference = this
+                .findPreference("change_custom_gps_outline_color");
+
         //get the default or current states for preferences used
         currentSetting = sp.getInt("custom_gps_icon_setting", 0);
 
@@ -111,6 +114,8 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
         defaultColor.setOnPreferenceClickListener(clickListener);
         customColor.setOnPreferenceClickListener(clickListener);
         changeColorPreference.setOnPreferenceClickListener(clickListener);
+        changeOutlineColorPreference
+                .setOnPreferenceClickListener(clickListener);
 
         setDefaultedSavedStates(); //set default states
     }
@@ -197,7 +202,11 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
                     break;
                 case "change_custom_gps_color":
                     //show color pallet dialog
-                    showColorPicker();
+                    showColorPicker("custom_color_selected");
+                    break;
+                case "change_custom_gps_outline_color":
+                    //show color pallet dialog
+                    showColorPicker("custom_outline_color_selected");
                     break;
             }
             return true;
@@ -208,11 +217,11 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
      * shows a RGB color picker in a android alert dialog class
      * user can construct their own color by using the seek bars
      */
-    private void showColorPicker() {
+    private void showColorPicker(final String prefKey) {
         final ColorPicker picker = new ColorPicker(getActivity(),
                 Color.parseColor(PreferenceManager.getDefaultSharedPreferences(
                         getActivity()).getString(
-                                "custom_color_selected", "#FFFFFF")));
+                                prefKey, "#FFFFFF")));
         AlertDialog.Builder b = new AlertDialog.Builder(getActivity())
                 .setTitle(R.string.select_custom_color)
                 .setMessage(R.string.preferences_text408)
@@ -222,7 +231,7 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
                             public void onClick(DialogInterface dialog,
                                     int which) {
                                 dialog.dismiss(); //dismiss dialog
-                                setUpCustomColor(picker);
+                                setUpCustomColor(picker, prefKey);
                             }
                         })
                 .setNegativeButton(R.string.cancel, null);
@@ -234,12 +243,12 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
     /**
      * @param picker the dialog colorpicker class where the color was constructed and saved
      */
-    private void setUpCustomColor(ColorPicker picker) {
+    private void setUpCustomColor(ColorPicker picker, final String prefKey) {
         //set new color for "custom_color_selected" pref
         PreferenceManager
                 .getDefaultSharedPreferences(getActivity())
                 .edit()
-                .putString("custom_color_selected",
+                .putString(prefKey,
                         convertIntColorToString(picker.getColor()))
                 .apply();
 

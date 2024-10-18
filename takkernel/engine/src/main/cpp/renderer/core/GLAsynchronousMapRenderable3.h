@@ -8,6 +8,7 @@
 #include "port/Collection.h"
 #include "port/Platform.h"
 #include "port/String.h"
+#include "renderer/core/GLDirtyRegion.h"
 #include "renderer/core/GLMapRenderable2.h"
 #include "renderer/core/GLGlobeBase.h"
 #include "renderer/core/controls/SurfaceRendererControl.h"
@@ -46,9 +47,19 @@ namespace TAK {
                      */                
                     virtual Util::TAKErr getRenderables(Port::Collection<GLMapRenderable2 *>::IteratorPtr &iter) NOTHROWS = 0;
                 protected :
-                    // Called by asynchronous processing thread - Produce the list
-                    // of current renderables to be later obtained by getCurrentRenderables()
-                    // on the rendering thread.
+                    /**
+                     * Called by asynchronous processing thread - Produce the
+                     * list of current renderables to be later obtained by
+                     * `getCurrentRenderables()` on the rendering thread.
+                     * 
+                     * <P>This function may _optionally_ modify
+                     * `surface_dirty_regions_` to reflect what _surface_
+                     * regions are dirty as a result of the call. Subclasses
+                     * that actively manage the dirty regions should clear
+                     * before populating; the default implementation will
+                     * pre-populate `surface_dirty_regions_` with the query
+                     * bounds.
+                     */
                     virtual Util::TAKErr updateRenderableLists(QueryContext &pendingData) NOTHROWS = 0;
 
                     // Called on rendering thread while holding mutex during release()
@@ -81,11 +92,16 @@ namespace TAK {
                     TAK::Engine::Thread::ThreadPtr thread_;
                     std::unique_ptr<WorkerThread> background_worker_;
                 protected :
+                    TAK::Engine::Core::RenderContext *context_;
                     Controls::SurfaceRendererControl *surface_ctrl_;
                     bool initialized_;
                     bool servicing_request_;
                     bool invalid_;
                     std::atomic<bool> cancelled_;
+                    /**
+                     * 
+                     */
+                    GLDirtyRegion surface_dirty_regions_;
 
                     TAK::Engine::Thread::Monitor monitor_;
                     TAK::Engine::Thread::RWMutex renderables_mutex_;

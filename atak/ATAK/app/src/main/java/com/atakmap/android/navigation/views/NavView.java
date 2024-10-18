@@ -639,7 +639,7 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
         embeddedToolbar.addOnLayoutChangeListener(new OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View v, int l, int t, int r, int b,
-                                       int ol, int ot, int or, int ob) {
+                    int ol, int ot, int or, int ob) {
                 if (l != ol)
                     updateButtonLayout();
             }
@@ -712,12 +712,17 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
      * Updates the top-left loadout display
      */
     private void updateButtonLayout() {
+
+        float iconScale = 1.5f;
+        if (!_prefs.get("largeActionBar", false))
+            iconScale = 1.0f;
+
         final int size = (int) (getResources().getDimension(
-                R.dimen.nav_button_size) * userIconScale);
+                R.dimen.nav_button_size) * iconScale);
         int zoomHeight = (int) (getResources().getDimension(
-                R.dimen.nav_zoom_button_height) * userIconScale);
+                R.dimen.nav_zoom_button_height) * iconScale);
         int compassHeight = (int) (getResources().getDimension(
-                R.dimen.dynamic_compass_height) * userIconScale);
+                R.dimen.dynamic_compass_height) * iconScale);
 
         // Update the button sizes first
         for (NavButton button : topButtons)
@@ -747,7 +752,8 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
         // Hide the menu button if we're right-aligned and the buttons are
         // turned off while a drop-down is open
         menuButton.setVisibility(alignRight && ddVisible && !buttonsVisible
-                ? View.GONE : View.VISIBLE);
+                ? View.GONE
+                : View.VISIBLE);
 
         // Update positions of buttons
         // The buttons are displayed in their natural order when left-aligned
@@ -899,8 +905,7 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
 
     private void onUserIconScaleChanged() {
         String option = _prefs.get("relativeOverlaysScalingRadioList", "1.0");
-        if (_prefs.get("largeActionBar", false))
-            option = String.valueOf(DEFAULT_SCALE_FACTOR);
+
         try {
             userIconScale = (float) DeveloperOptions.getDoubleOption(
                     "overlays-relative-scale-" + option,

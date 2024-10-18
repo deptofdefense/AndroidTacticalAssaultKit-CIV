@@ -37,7 +37,6 @@ namespace {
     void asyncSetLabelManager(void* opaque) NOTHROWS;
 #endif
     bool hasSettled(double dlat, double dlng, double dscale, double drot, double dtilt, double dfocusX, double dfocusY) NOTHROWS;
-    void State_save(GLGlobeBase::State *value, const GLGlobeBase& view) NOTHROWS;
 }
 
 struct GLGlobeBase::AsyncRunnable
@@ -58,7 +57,7 @@ struct GLGlobeBase::AsyncRunnable
     struct {
         float x {0};
         float y {0};
-    } focus;
+    } focusOffset;
     struct {
         double lat {0};
         double lon {0};
@@ -104,8 +103,8 @@ GLGlobeBase::GLGlobeBase(RenderContext &ctx, const double dpi, const MapCamera2:
     state.focus.geo.latitude = renderPasses[0].drawLat;
     state.focus.geo.longitude = renderPasses[0].drawLng;
     state.focus.geo.altitude = renderPasses[0].drawAlt;
-    state.focus.x = renderPasses[0].focusx;
-    state.focus.y = renderPasses[0].focusy;
+    state.focus.offsetX = 0.f;
+    state.focus.offsetY = 0.f;
     state.srid = renderPasses[0].drawSrid;
     state.resolution = renderPasses[0].drawMapResolution;
     state.rotation = renderPasses[0].drawRotation;
@@ -138,6 +137,21 @@ GLGlobeBase::~GLGlobeBase() NOTHROWS
 }
 TAKErr GLGlobeBase::start() NOTHROWS
 {
+    auto surface = context.getRenderSurface();
+    if (surface) {
+        surface->addOnSizeChangedListener(this);
+        displayDpi = surface->getDpi();
+        state.width = surface->getWidth();
+        state.height = surface->getHeight();
+        {
+            WriteLock wlock(renderPasses0Mutex);
+            renderPasses[0].top = (int)state.height;
+            renderPasses[0].right = (int)state.width;
+            renderPasses[0].viewport.width = (float)state.width;
+            renderPasses[0].viewport.height = (float)state.height;
+            animation.settled = false;
+        }
+    }
     return TE_Ok;
 }
 TAKErr GLGlobeBase::stop() NOTHROWS
@@ -148,6 +162,10 @@ TAKErr GLGlobeBase::stop() NOTHROWS
 
     if (this->labelManager)
         this->labelManager->stop();
+
+    auto surface = context.getRenderSurface();
+    if (surface)
+        surface->removeOnSizeChangedListener(*this);
 
     return TE_Ok;
 }
@@ -172,6 +190,9 @@ void GLGlobeBase::setBaseMap(GLMapRenderable2Ptr &&map) NOTHROWS
         context.queueEvent(asyncSetBaseMap, std::unique_ptr<void, void(*)(const void *)>(p.release(), Memory_leaker_const<void>));
     } else {
         basemap = std::move(map);
+        auto ctrl = getSurfaceRendererControl();
+        if (ctrl)
+            ctrl->markDirty();
     }
 }
 #ifndef __ANDROID__
@@ -219,8 +240,13 @@ void GLGlobeBase::prepareScene() NOTHROWS
 
     // dispatch camera changed
     if(animated) {
-        Lock cclock(cameraChangedMutex);
-        for(auto it : cameraListeners)
+        // must acquire `asyncRunnablesMutex` prior to `cameraListeners.mutex` to avoid potential
+        // out-of-order lock acquisition
+        Lock runnablesLock(*asyncRunnablesMutex);
+        Lock cclock(cameraListeners.mutex);
+        for(auto it : cameraListeners.value)
+            it->onCameraChanged(*this);
+        for(auto it : cameraListeners.value2)
             it->onCameraChanged(*this);
     }
 
@@ -286,13 +312,13 @@ TAKErr GLGlobeBase::registerControl(const Layer2 &layer, const char *type, void 
         return TE_InvalidArg;
 
     TAKErr code(TE_Ok);
-    Lock lock(controlsMutex);
+    Lock lock(layerControls.mutex);
     TE_CHECKRETURN_CODE(lock.status);
 
     std::map<const Layer2 *, std::map<std::string, std::set<void *>>>::iterator entry;
-    entry = controls.find(&layer);
-    if (entry == controls.end()) {
-        controls[&layer][type].insert(ctrl);
+    entry = layerControls.value.find(&layer);
+    if (entry == layerControls.value.end()) {
+        layerControls.value[&layer][type].insert(ctrl);
     } else {
         entry->second[type].insert(ctrl);
     }
@@ -320,12 +346,12 @@ TAKErr GLGlobeBase::unregisterControl(const TAK::Engine::Core::Layer2 &layer, co
         return TE_InvalidArg;
 
     TAKErr code(TE_Ok);
-    Lock lock(controlsMutex);
+    Lock lock(layerControls.mutex);
     TE_CHECKRETURN_CODE(lock.status);
 
     std::map<const Layer2 *, std::map<std::string, std::set<void *>>>::iterator entry;
-    entry = controls.find(&layer);
-    if (entry == controls.end()) {
+    entry = layerControls.value.find(&layer);
+    if (entry == layerControls.value.end()) {
         Logger_log(TELL_Warning, "No controls are registered on Layer [%s]", layer.getName());
         return TE_Ok;
     }
@@ -340,7 +366,7 @@ TAKErr GLGlobeBase::unregisterControl(const TAK::Engine::Core::Layer2 &layer, co
     if (ctrlEntry->second.empty()) {
         entry->second.erase(ctrlEntry);
         if (entry->second.empty())
-            controls.erase(entry);
+            layerControls.value.erase(entry);
     }
 
     Control c;
@@ -369,13 +395,13 @@ TAKErr GLGlobeBase::visitControls(bool *visited, void *opaque, TAKErr(*visitor)(
         return TE_InvalidArg;
 
     TAKErr code(TE_Ok);
-    Lock lock(controlsMutex);
+    Lock lock(layerControls.mutex);
     TE_CHECKRETURN_CODE(lock.status);
 
     // obtain controls on layer
     std::map<const Layer2 *, std::map<std::string, std::set<void *>>>::iterator entry;
-    entry = controls.find(&layer);
-    if (entry == controls.end())
+    entry = layerControls.value.find(&layer);
+    if (entry == layerControls.value.end())
         return TE_Ok;
 
     // obtain controls of type
@@ -407,13 +433,13 @@ TAKErr GLGlobeBase::visitControls(bool *visited, void *opaque, TAKErr(*visitor)(
         return TE_InvalidArg;
 
     TAKErr code(TE_Ok);
-    Lock lock(controlsMutex);
+    Lock lock(layerControls.mutex);
     TE_CHECKRETURN_CODE(lock.status);
 
     // obtain controls on layer
     std::map<const Layer2 *, std::map<std::string, std::set<void *>>>::iterator entry;
-    entry = controls.find(&layer);
-    if (entry == controls.end())
+    entry = layerControls.value.find(&layer);
+    if (entry == layerControls.value.end())
         return TE_Ok;
 
     // obtain controls of type
@@ -439,12 +465,11 @@ TAKErr GLGlobeBase::visitControls(bool *visited, void *opaque, TAKErr(*visitor)(
 TAKErr GLGlobeBase::visitControls(void *opaque, TAKErr(*visitor)(void *opaque, const Layer2 &layer, const Control &ctrl)) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    Lock lock(controlsMutex);
+    Lock lock(layerControls.mutex);
     TE_CHECKRETURN_CODE(lock.status);
 
     // obtain controls on layer
-    std::map<const Layer2 *, std::map<std::string, std::set<void *>>>::iterator entry;
-    for (entry = controls.begin(); entry != controls.end(); entry++) {
+    for (auto entry = layerControls.value.begin(); entry != layerControls.value.end(); entry++) {
         // obtain controls of type
         std::map<std::string, std::set<void *>>::iterator ctrlEntry;
         for (ctrlEntry = entry->second.begin(); ctrlEntry != entry->second.end(); ctrlEntry++) {
@@ -469,7 +494,7 @@ TAKErr GLGlobeBase::addOnControlsChangedListener(TAK::Engine::Core::MapRenderer:
         return TE_InvalidArg;
 
     TAKErr code(TE_Ok);
-    Lock lock(controlsMutex);
+    Lock lock(layerControls.mutex);
     TE_CHECKRETURN_CODE(lock.status);
 
     controlsListeners.insert(l);
@@ -481,7 +506,7 @@ TAKErr GLGlobeBase::removeOnControlsChangedListener(TAK::Engine::Core::MapRender
         return TE_InvalidArg;
 
     TAKErr code(TE_Ok);
-    Lock lock(controlsMutex);
+    Lock lock(layerControls.mutex);
     TE_CHECKRETURN_CODE(lock.status);
 
     controlsListeners.erase(l);
@@ -490,6 +515,30 @@ TAKErr GLGlobeBase::removeOnControlsChangedListener(TAK::Engine::Core::MapRender
 RenderContext &GLGlobeBase::getRenderContext() const NOTHROWS
 {
     return context;
+}
+TAKErr GLGlobeBase::getControl(void **value, const char *type) const NOTHROWS
+{
+    if(!type)
+        return TE_InvalidArg;
+    if(!value)
+        return TE_InvalidArg;
+    ReadLock lock(rendererControls.mutex);
+    auto entry = rendererControls.value.find(type);
+    if(entry == rendererControls.value.end())
+        return TE_InvalidArg;
+    *value = entry->second;
+    return TE_Ok;
+}
+TAKErr GLGlobeBase::registerRendererControl(const char *type, void *ctrl) NOTHROWS
+{
+    if(!type)
+        return TE_InvalidArg;
+    WriteLock lock(rendererControls.mutex);
+    if(!ctrl)
+        rendererControls.value.erase(type);
+    else
+        rendererControls.value[type] = ctrl;
+    return TE_Ok;
 }
 TAKErr GLGlobeBase::lookAt(const TAK::Engine::Core::GeoPoint2 &from, const TAK::Engine::Core::GeoPoint2 &at, const CameraCollision collision, const bool animate) NOTHROWS
 {
@@ -513,6 +562,13 @@ TAKErr GLGlobeBase::lookAt(const TAK::Engine::Core::GeoPoint2 &at, const double 
     state.rotation = azimuth;
     state.tilt = tilt;
 
+    // dispatch camera change requested
+    {
+        Lock cclock(cameraListeners.mutex);
+        for(auto it : cameraListeners.value2)
+            it->onCameraChangeRequested(*this);
+    }
+
     if(!mapMovedEvent.get())
         mapMovedEvent.reset(new AsyncRunnable(*this, asyncRunnablesMutex));
     mapMovedEvent->target.lat = at.latitude;
@@ -524,8 +580,8 @@ TAKErr GLGlobeBase::lookAt(const TAK::Engine::Core::GeoPoint2 &at, const double 
     mapMovedEvent->target.factor = animate ? 0.3f : 1.0f;
 
     if(!mapMovedEvent->enqueued) {
-        context.queueEvent(asyncAnimate, std::unique_ptr<void, void(*)(const void *)>(mapMovedEvent.get(), Memory_leaker_const<void>));
         mapMovedEvent->enqueued = true;
+        context.queueEvent(asyncAnimate, std::unique_ptr<void, void(*)(const void *)>(mapMovedEvent.get(), Memory_leaker_const<void>));
     }
 
     return TE_Ok;
@@ -559,7 +615,8 @@ TAKErr GLGlobeBase::lookFrom(const GeoPoint2 &from_, const double azimuth, const
         height,
         state.srid,
         from,
-        state.focus.x, state.focus.y,
+        (float)state.width/2.f + state.focus.offsetX,
+        (float)state.height/2.f - state.focus.offsetY,
         azimuth,
         tilt,
         gsd,
@@ -583,6 +640,13 @@ TAKErr GLGlobeBase::lookFrom(const GeoPoint2 &from_, const double azimuth, const
     state.rotation = azimuth;
     state.tilt = tilt;
 
+    // dispatch camera change requested
+    {
+        Lock cclock(cameraListeners.mutex);
+        for(auto it : cameraListeners.value2)
+            it->onCameraChangeRequested(*this);
+    }
+
     if(!mapMovedEvent.get())
         mapMovedEvent.reset(new AsyncRunnable(*this, asyncRunnablesMutex));
     mapMovedEvent->target.lat = origFocus.latitude;
@@ -594,8 +658,8 @@ TAKErr GLGlobeBase::lookFrom(const GeoPoint2 &from_, const double azimuth, const
     mapMovedEvent->target.factor = animate ? 0.3f : 1.0f;
 
     if(!mapMovedEvent->enqueued) {
-        context.queueEvent(asyncAnimate, std::unique_ptr<void, void(*)(const void *)>(mapMovedEvent.get(), Memory_leaker_const<void>));
         mapMovedEvent->enqueued = true;
+        context.queueEvent(asyncAnimate, std::unique_ptr<void, void(*)(const void *)>(mapMovedEvent.get(), Memory_leaker_const<void>));
     }
     return TE_Ok;
 }
@@ -603,22 +667,46 @@ bool GLGlobeBase::isAnimating() const NOTHROWS
 {
     return !animation.settled;
 }
-TAKErr GLGlobeBase::addOnCameraChangedListener(TAK::Engine::Core::MapRenderer2::OnCameraChangedListener *l) NOTHROWS
+TAKErr GLGlobeBase::addOnCameraChangedListener(MapRenderer2::OnCameraChangedListener *l) NOTHROWS
 {
     if(!l)
         return TE_InvalidArg;
-    Lock lock(cameraChangedMutex);
+    auto l2 = dynamic_cast<MapRenderer3::OnCameraChangedListener2 *>(l);
+    if(l2)
+        return addOnCameraChangedListener(l2);
+    Lock lock(cameraListeners.mutex);
     TE_CHECKRETURN_CODE(lock.status);
-    cameraListeners.insert(l);
+    cameraListeners.value.insert(l);
     return TE_Ok;
 }
-TAKErr GLGlobeBase::removeOnCameraChangedListener(TAK::Engine::Core::MapRenderer2::OnCameraChangedListener *l) NOTHROWS
+TAKErr GLGlobeBase::removeOnCameraChangedListener(MapRenderer2::OnCameraChangedListener *l) NOTHROWS
 {
     if(!l)
         return TE_InvalidArg;
-    Lock lock(cameraChangedMutex);
+    auto l2 = dynamic_cast<MapRenderer3::OnCameraChangedListener2 *>(l);
+    if(l2)
+        return removeOnCameraChangedListener(l2);
+    Lock lock(cameraListeners.mutex);
     TE_CHECKRETURN_CODE(lock.status);
-    cameraListeners.erase(l);
+    cameraListeners.value.erase(l);
+    return TE_Ok;
+}
+TAKErr GLGlobeBase::addOnCameraChangedListener(MapRenderer3::OnCameraChangedListener2 *l) NOTHROWS
+{
+    if(!l)
+        return TE_InvalidArg;
+    Lock lock(cameraListeners.mutex);
+    TE_CHECKRETURN_CODE(lock.status);
+    cameraListeners.value2.insert(l);
+    return TE_Ok;
+}
+TAKErr GLGlobeBase::removeOnCameraChangedListener(MapRenderer3::OnCameraChangedListener2 *l) NOTHROWS
+{
+    if(!l)
+        return TE_InvalidArg;
+    Lock lock(cameraListeners.mutex);
+    TE_CHECKRETURN_CODE(lock.status);
+    cameraListeners.value2.erase(l);
     return TE_Ok;
 }
 bool GLGlobeBase::animate() NOTHROWS
@@ -637,9 +725,12 @@ bool GLGlobeBase::animate() NOTHROWS
         renderPasses[0].drawAlt = animation.last.point.altitude;
         renderPasses[0].drawRotation = animation.last.rotation;
         renderPasses[0].drawTilt = animation.last.tilt;
-        renderPasses[0].focusx = animation.last.focusx;
-        renderPasses[0].focusy = animation.last.focusy;
+        renderPasses[0].focusx = (float)state.width/2.f + animation.last.focusOffset.x;
+        renderPasses[0].focusy = (float)state.height/2.f - animation.last.focusOffset.y;
         renderPasses[0].drawMapResolution = atakmap::core::AtakMapView_getMapResolution(displayDpi, renderPasses[0].drawMapScale);
+
+        renderPasses[0].animationLastTick = animationLastTick;
+        renderPasses[0].animationDelta = animationDelta;
     }
 
     if(animation.settled && !settled) {
@@ -662,8 +753,8 @@ bool GLGlobeBase::animate() NOTHROWS
                              animation.current.point.latitude);
     const double lngDelta = (animation.target.point.longitude -
                              animation.current.point.longitude);
-    const double focusxDelta = (animation.target.focusx - animation.current.focusx);
-    const double focusyDelta = (animation.target.focusy - animation.current.focusy);
+    const double focusxDelta = (animation.target.focusOffset.x - animation.current.focusOffset.x);
+    const double focusyDelta = (animation.target.focusOffset.y - animation.current.focusOffset.y);
 
     // update the `current` animation state using the delta values and the
     // animation factor
@@ -683,8 +774,8 @@ bool GLGlobeBase::animate() NOTHROWS
     else if (animation.current.point.longitude > 180.0)
         animation.current.point.longitude -= 360.0;
     animation.current.point.altitude = animation.target.point.altitude;
-    animation.current.focusx += (float) (focusxDelta * animationFactor);
-    animation.current.focusy += (float) (focusyDelta * animationFactor);
+    animation.current.focusOffset.x += (float) (focusxDelta * animationFactor);
+    animation.current.focusOffset.y += (float) (focusyDelta * animationFactor);
 
     double rotDelta = (animation.target.rotation - animation.current.rotation);
 
@@ -739,8 +830,8 @@ TAKErr GLGlobeBase::setDisplayMode(const MapRenderer::DisplayMode mode) NOTHROWS
     projectionChangedEvent->srid = srid;
 
     if(!projectionChangedEvent->enqueued) {
-        context.queueEvent(asyncProjUpdate, std::unique_ptr<void, void(*)(const void *)>(projectionChangedEvent.get(), Memory_leaker_const<void>));
         projectionChangedEvent->enqueued = true;
+        context.queueEvent(asyncProjUpdate, std::unique_ptr<void, void(*)(const void *)>(projectionChangedEvent.get(), Memory_leaker_const<void>));
     }
     return TE_Ok;
 }
@@ -756,15 +847,20 @@ MapRenderer::DisplayOrigin GLGlobeBase::getDisplayOrigin() const NOTHROWS
 TAKErr GLGlobeBase::setFocusPoint(const float focusx, const float focusy) NOTHROWS
 {
     Lock lock(*asyncRunnablesMutex);
-    state.focus.x = focusx;
-    state.focus.y = focusy;
+    return setFocusPointOffset(focusx-(float)state.width/2.f, focusy-(float)state.height/2.f);
+}
+TAKErr GLGlobeBase::setFocusPointOffset(const float offsetX, const float offsetY) NOTHROWS
+{
+    Lock lock(*asyncRunnablesMutex);
+    state.focus.offsetX = offsetX;
+    state.focus.offsetY = offsetY;
     if(!focusChangedEvent.get())
         focusChangedEvent.reset(new AsyncRunnable(*this, asyncRunnablesMutex));
-    focusChangedEvent->focus.x = focusx;
-    focusChangedEvent->focus.y = focusy;
+    focusChangedEvent->focusOffset.x = state.focus.offsetX;
+    focusChangedEvent->focusOffset.y = state.focus.offsetY;
     if(!focusChangedEvent->enqueued) {
-        context.queueEvent(asyncAnimateFocus, std::unique_ptr<void, void(*)(const void *)>(focusChangedEvent.get(), Memory_leaker_const<void>));
         focusChangedEvent->enqueued = true;
+        context.queueEvent(asyncAnimateFocus, std::unique_ptr<void, void(*)(const void *)>(focusChangedEvent.get(), Memory_leaker_const<void>));
     }
     return TE_Ok;
 }
@@ -773,9 +869,17 @@ TAKErr GLGlobeBase::getFocusPoint(float *focusx, float *focusy) const NOTHROWS
     if(!focusx || !focusy)
         return TE_InvalidArg;
     Lock lock(*asyncRunnablesMutex);
-    *focusx = state.focus.x;
-    // correct for LL origin
-    *focusy = (float)state.height-state.focus.y;
+    *focusx = (float)state.width/2.f + state.focus.offsetX;
+    *focusy = (float)state.height/2.f + state.focus.offsetY;
+    return TE_Ok;
+}
+TAKErr GLGlobeBase::getFocusPointOffset(float *offx, float *offy) const NOTHROWS
+{
+    if(!offx || !offy)
+        return TE_InvalidArg;
+    Lock lock(*asyncRunnablesMutex);
+    *offx = state.focus.offsetX;
+    *offy = state.focus.offsetY;
     return TE_Ok;
 }
 TAKErr GLGlobeBase::setSurfaceSize(const std::size_t width, const std::size_t height) NOTHROWS
@@ -791,16 +895,84 @@ TAKErr GLGlobeBase::setSurfaceSize(const std::size_t width, const std::size_t he
     mapResizedEvent->resize.width = width;
     mapResizedEvent->resize.height = height;
     if(!mapResizedEvent->enqueued) {
-        context.queueEvent(glMapResized, std::unique_ptr<void, void(*)(const void *)>(mapResizedEvent.get(), Memory_leaker_const<void>));
         mapResizedEvent->enqueued = true;
+        context.queueEvent(glMapResized, std::unique_ptr<void, void(*)(const void *)>(mapResizedEvent.get(), Memory_leaker_const<void>));
+    }
+
+    //if(state.focus.offsetX || state.focus.offsetY)
+    {
+        if(!focusChangedEvent.get())
+            focusChangedEvent.reset(new AsyncRunnable(*this, asyncRunnablesMutex));
+        focusChangedEvent->focusOffset.x = state.focus.offsetX;
+        focusChangedEvent->focusOffset.y = state.focus.offsetY;
+        if(!focusChangedEvent->enqueued) {
+            focusChangedEvent->enqueued = true;
+            context.queueEvent(asyncAnimateFocus, std::unique_ptr<void, void(*)(const void *)>(focusChangedEvent.get(), Memory_leaker_const<void>));
+        }
     }
     return TE_Ok;
 }
-TAKErr GLGlobeBase::getMapSceneModel(MapSceneModel2 *value, const bool instant, const DisplayOrigin origin) NOTHROWS
+TAKErr GLGlobeBase::getSurfaceSize(std::size_t *width, std::size_t *height) const NOTHROWS
 {
-    return TE_Unsupported;
+    if(!width || !height)
+        return TE_InvalidArg;
+    Lock lock(*asyncRunnablesMutex);
+    *width = state.width;
+    *height = state.height;
+    return TE_Ok;
 }
+TAKErr GLGlobeBase::getMapSceneModel(MapSceneModel2 *value, const bool instant, const DisplayOrigin origin) const NOTHROWS
+{
 
+    if(instant) {
+        {
+            ReadLock rlock(renderPasses0Mutex);
+            *value = renderPasses[0].scene;
+        }
+        if(origin == DisplayOrigin::UpperLeft) {
+            // flip forward/inverse matrices
+            value->inverseTransform.translate(0.0, (double)value->height, 0.0);
+            value->inverseTransform.scale(1.0, -1.0, 1.0);
+
+
+            value->forwardTransform.preConcatenate(Matrix2(1.0, 0.0, 0.0, 0.0,
+                                                            0.0, -1.0, 0.0, 0.0,
+                                                            0.0, 0.0, 1.0, 0.0,
+                                                            0.0, 0.0, 0.0, 1.0));
+            value->forwardTransform.preConcatenate(Matrix2(1.0, 0.0, 0.0, 0.0,
+                                                            0.0, 1.0, 0.0, (double)value->height,
+                                                            0.0, 0.0, 1.0, 0.0,
+                                                            0.0, 0.0, 0.0, 1.0));
+        }
+    } else {
+        {
+            Lock lock(*asyncRunnablesMutex);
+            value->set(
+                displayDpi,
+                state.width,
+                state.height,
+                state.srid,
+                state.focus.geo,
+                (float)state.width/2.f + state.focus.offsetX,
+                (float)state.height/2.f - state.focus.offsetY,
+                state.rotation,
+                state.tilt,
+                state.resolution,
+                animation.target.clip.near,
+                animation.target.clip.far,
+                cammode);
+        }
+        // flip forward/inverse matrices
+        if(origin == DisplayOrigin::LowerLeft)
+            GLGlobeBase_glScene(*value);
+    }
+
+    return TE_Ok;
+}
+void GLGlobeBase::onSizeChanged(const TAK::Engine::Core::RenderSurface &surface, const std::size_t width, const std::size_t height) NOTHROWS
+{
+    setSurfaceSize(width, height);
+}
 void GLGlobeBase::mapLayerAdded(atakmap::core::AtakMapView* map_view, atakmap::core::Layer *layer)
 {
     std::list<atakmap::core::Layer *> layers;
@@ -914,8 +1086,8 @@ void GLGlobeBase::refreshLayers(const std::list<atakmap::core::Layer *> &layers)
         layersChangedEvent->layers.releasables.clear();
     } else {
         if(!layersChangedEvent->enqueued){
-            context.queueEvent(asyncRefreshLayers, std::unique_ptr<void, void(*)(const void *)>(layersChangedEvent.get(), Memory_leaker_const<void>));
             layersChangedEvent->enqueued = true;
+            context.queueEvent(asyncRefreshLayers, std::unique_ptr<void, void(*)(const void *)>(layersChangedEvent.get(), Memory_leaker_const<void>));
         }
     }
 }
@@ -930,7 +1102,9 @@ TAKErr GLGlobeBase::getTerrainMeshElevation(double* value, const double latitude
 }
 SurfaceRendererControl* GLGlobeBase::getSurfaceRendererControl() const NOTHROWS
 {
-    return nullptr;
+    void *surfaceControl;
+    return (this->getControl(&surfaceControl, SurfaceRendererControl_getType()) == TE_Ok) ?
+        static_cast<SurfaceRendererControl *>(surfaceControl) : nullptr;
 }
 IlluminationControlImpl* GLGlobeBase::getIlluminationControl() const NOTHROWS
 {
@@ -962,6 +1136,10 @@ void GLGlobeBase::asyncAnimate(void *opaque) NOTHROWS
 
     runnable->owner.animation.target.point.latitude = runnable->target.lat;
     runnable->owner.animation.target.point.longitude = runnable->target.lon;
+    if(runnable->owner.animation.target.point.longitude > 180.0)
+        runnable->owner.animation.target.point.longitude -= 360.0;
+    else if(runnable->owner.animation.target.point.longitude < -180.0)
+        runnable->owner.animation.target.point.longitude += 360.0;
     runnable->owner.animation.target.point.altitude = runnable->target.alt;
     runnable->owner.animation.target.mapScale = runnable->target.scale;
     runnable->owner.animation.target.rotation = runnable->target.rot;
@@ -1005,8 +1183,8 @@ void GLGlobeBase::asyncAnimateFocus(void *opaque) NOTHROWS
     if (*runnable->canceled)
         return;
 
-    runnable->owner.animation.target.focusx = runnable->focus.x;
-    runnable->owner.animation.target.focusy = runnable->focus.y;
+    runnable->owner.animation.target.focusOffset.x = runnable->focusOffset.x;
+    runnable->owner.animation.target.focusOffset.y = runnable->focusOffset.y;
     runnable->owner.animation.settled = false;
     runnable->owner.settled = false;
     runnable->owner.drawVersion++;
@@ -1100,10 +1278,80 @@ GLGlobeBase::State::State() NOTHROWS :
     animationLastTick(-1),
     animationDelta(-1)
 {}
-GLGlobeBase::State::State(const GLGlobeBase &view) NOTHROWS
+GLGlobeBase::State::State(const GLGlobeBase &view) NOTHROWS :
+    State(view.renderPasses[0u])
+{}
+GLGlobeBase::State::State(const GLGlobeBase::State &other) NOTHROWS 
 {
-    State_save(this, view);
+    *this = other;
 }
+GLGlobeBase::State &GLGlobeBase::State::operator=(const GLGlobeBase::State& other) NOTHROWS
+{
+#define __STATE_COPY_FIELD(x) this->x = other.x
+
+    __STATE_COPY_FIELD(drawMapScale);
+    __STATE_COPY_FIELD(drawMapResolution);
+    __STATE_COPY_FIELD(drawLat);
+    __STATE_COPY_FIELD(drawLng);
+    __STATE_COPY_FIELD(drawAlt);
+    __STATE_COPY_FIELD(drawRotation);
+    __STATE_COPY_FIELD(drawTilt);
+    __STATE_COPY_FIELD(animationFactor);
+    __STATE_COPY_FIELD(drawVersion);
+    __STATE_COPY_FIELD(targeting);
+    __STATE_COPY_FIELD(isScreenshot);
+    __STATE_COPY_FIELD(westBound);
+    __STATE_COPY_FIELD(southBound);
+    __STATE_COPY_FIELD(northBound);
+    __STATE_COPY_FIELD(eastBound);
+    __STATE_COPY_FIELD(left);
+    __STATE_COPY_FIELD(right);
+    __STATE_COPY_FIELD(top);
+    __STATE_COPY_FIELD(bottom);
+    __STATE_COPY_FIELD(near);
+    __STATE_COPY_FIELD(far);
+    __STATE_COPY_FIELD(drawSrid);
+    __STATE_COPY_FIELD(focusx);
+    __STATE_COPY_FIELD(focusy);
+    __STATE_COPY_FIELD(upperLeft);
+    __STATE_COPY_FIELD(upperRight);
+    __STATE_COPY_FIELD(lowerRight);
+    __STATE_COPY_FIELD(lowerLeft);
+    __STATE_COPY_FIELD(settled);
+    __STATE_COPY_FIELD(renderPump);
+    __STATE_COPY_FIELD(verticalFlipTranslate);
+    __STATE_COPY_FIELD(verticalFlipTranslateHeight);
+    __STATE_COPY_FIELD(animationLastTick);
+    __STATE_COPY_FIELD(animationDelta);
+    __STATE_COPY_FIELD(sceneModelVersion);
+    __STATE_COPY_FIELD(scene);
+    memcpy(this->sceneModelForwardMatrix, other.sceneModelForwardMatrix, sizeof(float) * 16u);
+    __STATE_COPY_FIELD(drawHorizon);
+    __STATE_COPY_FIELD(crossesIDL);
+    __STATE_COPY_FIELD(poleInView);
+    __STATE_COPY_FIELD(displayDpi);
+    __STATE_COPY_FIELD(texture);
+    __STATE_COPY_FIELD(renderPass);
+    __STATE_COPY_FIELD(viewport);
+    __STATE_COPY_FIELD(basemap);
+    __STATE_COPY_FIELD(debugDrawBounds);
+    __STATE_COPY_FIELD(renderTiles);
+
+    // deep copy surface bounds
+    surfaceBoundsData.clear();
+    if(other.surfaceBounds.count) {
+        surfaceBoundsData.reserve(other.surfaceBounds.count);
+        for (std::size_t i = 0u; i < other.surfaceBounds.count; i++)
+            surfaceBoundsData.push_back(other.surfaceBounds.value[i]);
+        surfaceBounds.value = &surfaceBoundsData.at(0);
+    } else {
+        surfaceBounds.value = nullptr;
+    }
+    surfaceBounds.count = surfaceBoundsData.size();
+
+    return *this;
+}
+
 // Globals
 void TAK::Engine::Renderer::Core::GLGlobeBase_glScene(MapSceneModel2 &scene) NOTHROWS
 {
@@ -1145,47 +1393,5 @@ namespace {
                IS_TINY(dtilt) &&
                IS_TINYF(dfocusX) &&
                IS_TINYF(dfocusY);
-    }
-
-    void State_save(GLGlobeBase::State *value, const GLGlobeBase& view) NOTHROWS
-    {
-        value->drawMapScale = view.renderPasses[0].drawMapScale;
-        value->drawMapResolution = view.renderPasses[0].drawMapResolution;
-        value->drawLat = view.renderPasses[0].drawLat;
-        value->drawLng = view.renderPasses[0].drawLng;
-        value->drawAlt = view.renderPasses[0].drawAlt;
-        value->drawRotation = view.renderPasses[0].drawRotation;
-        value->drawTilt = view.renderPasses[0].drawTilt;
-        value->animationFactor = view.animationFactor;
-        value->drawVersion = view.renderPasses[0].drawVersion;
-        value->targeting = view.targeting;
-        value->isScreenshot = view.isScreenshot;
-        value->westBound = view.renderPasses[0].westBound;
-        value->southBound = view.renderPasses[0].southBound;
-        value->northBound = view.renderPasses[0].northBound;
-        value->eastBound = view.renderPasses[0].eastBound;
-        value->left = view.renderPasses[0].left;
-        value->right = view.renderPasses[0].right;
-        value->top = view.renderPasses[0].top;
-        value->bottom = view.renderPasses[0].bottom;
-        value->near = view.renderPasses[0].near;
-        value->far = view.renderPasses[0].far;
-        value->drawSrid = view.renderPasses[0].drawSrid;
-        value->focusx = view.renderPasses[0].focusx;
-        value->focusy = view.renderPasses[0].focusy;
-        value->upperLeft = view.renderPasses[0].upperLeft;
-        value->upperRight = view.renderPasses[0].upperRight;
-        value->lowerRight = view.renderPasses[0].lowerRight;
-        value->lowerLeft = view.renderPasses[0].lowerLeft;
-        value->settled = view.settled;
-        value->renderPump = view.renderPasses[0].renderPump;
-        value->animationLastTick = view.animationLastTick;
-        value->animationDelta = view.animationDelta;
-        value->sceneModelVersion = view.sceneModelVersion;
-        value->scene = view.renderPasses[0].scene;
-        memcpy(value->sceneModelForwardMatrix, view.renderPasses[0].sceneModelForwardMatrix, sizeof(float) * 16);
-        value->drawHorizon = view.renderPasses[0].drawHorizon;
-        value->crossesIDL = view.renderPasses[0].crossesIDL;
-        value->displayDpi = view.displayDpi;
     }
 }

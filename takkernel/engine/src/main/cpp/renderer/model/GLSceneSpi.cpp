@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/model/GLSceneSpi.h"
 
 using namespace TAK::Engine::Renderer::Model;
@@ -9,3 +10,4 @@ GLSceneSpi::Options::Options() NOTHROWS
 //    : showIndicator(false)
     : showIndicator(true)
 {}
+#endif

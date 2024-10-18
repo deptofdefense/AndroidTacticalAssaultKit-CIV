@@ -233,15 +233,15 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                     !Double.isNaN(bnds.getWest()) &&
                     !Double.isNaN(bnds.getSouth()) &&
                     !Double.isNaN(bnds.getWest())) {
-                        final GeoPoint upperLeft = new GeoPoint(bnds.getNorth(),
-                                bnds.getWest());
-                        final GeoPoint lowerRight = new GeoPoint(bnds.getSouth(),
-                                bnds.getEast());
+                final GeoPoint upperLeft = new GeoPoint(bnds.getNorth(),
+                        bnds.getWest());
+                final GeoPoint lowerRight = new GeoPoint(bnds.getSouth(),
+                        bnds.getEast());
 
-                        if (onlyViewport) {
-                            params.spatialFilter = new DatasetQueryParameters.RegionSpatialFilter(
-                                    upperLeft, lowerRight);
-                        }
+                if (onlyViewport) {
+                    params.spatialFilter = new DatasetQueryParameters.RegionSpatialFilter(
+                            upperLeft, lowerRight);
+                }
 
             }
 

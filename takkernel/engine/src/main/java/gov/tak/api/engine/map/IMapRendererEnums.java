@@ -1,16 +1,23 @@
 package gov.tak.api.engine.map;
 
+import gov.tak.api.annotation.DontObfuscate;
+
+
+@DontObfuscate
 public interface IMapRendererEnums {
+    @DontObfuscate
     enum DisplayMode {
         Flat,
         Globe,
     }
 
+    @DontObfuscate
     enum DisplayOrigin {
         UpperLeft,
-        Lowerleft,
+        LowerLeft,
     }
 
+    @DontObfuscate
     enum InverseMode {
         /**
          * Transforms all three components (x,y,z) of the viewspace coordinate
@@ -31,6 +38,7 @@ public interface IMapRendererEnums {
     /** If specified, instructs the raycast operation to ignore surface meshes */
     int HINT_RAYCAST_IGNORE_SURFACE_MESH = 0x02;
 
+    @DontObfuscate
     enum InverseResult {
         /** no intersection */
         None,
@@ -44,6 +52,7 @@ public interface IMapRendererEnums {
         TerrainMesh,
     }
 
+    @DontObfuscate
     enum CameraCollision {
         /** Camera collisions with surfaces is allowed */
         Ignore,

@@ -52,6 +52,8 @@ namespace // unnamed namespace
 
     InternalProjectionSpi sdkSpi;
 
+    const double webMercatorLatitudeLimit = atan(sinh(M_PI)) / M_PI * 180.0;
+
 }; // end unnamed namespace
 
 
@@ -274,11 +276,11 @@ namespace
     }
     double WebMercatorProjection::getMinLatitude() const NOTHROWS
     {
-        return -85.0511;
+        return -webMercatorLatitudeLimit;
     }
     double WebMercatorProjection::getMaxLatitude() const NOTHROWS
     {
-        return 85.0511;
+         return webMercatorLatitudeLimit;
     }
     double WebMercatorProjection::getMinLongitude() const NOTHROWS
     {

@@ -16,6 +16,8 @@ import java.util.List;
  */
 class SetMapAction implements MapAction {
 
+    private final List<MapAction> _set = new LinkedList<>();
+
     public static class Factory implements ConfigFactory<MapAction> {
         @Override
         public MapAction createFromElem(ConfigEnvironment config,
@@ -36,8 +38,6 @@ class SetMapAction implements MapAction {
             return setAction;
         }
     }
-
-    private final List<MapAction> _set = new LinkedList<>();
 
     @Override
     public void performAction(final MapView mapView, final MapItem mapItem) {

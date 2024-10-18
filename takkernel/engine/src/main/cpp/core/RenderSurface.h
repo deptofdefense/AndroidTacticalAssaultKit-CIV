@@ -19,7 +19,7 @@ namespace TAK {
                 virtual std::size_t getHeight() const NOTHROWS = 0;
 
                 virtual void addOnSizeChangedListener(OnSizeChangedListener *l) NOTHROWS = 0;
-                virtual void removeOnSizedChangedListener(const OnSizeChangedListener &l) NOTHROWS = 0;
+                virtual void removeOnSizeChangedListener(const OnSizeChangedListener &l) NOTHROWS = 0;
             };
 
             class RenderSurface::OnSizeChangedListener

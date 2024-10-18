@@ -60,7 +60,7 @@ public class MissionPackageAdapter extends BaseAdapter {
                 MissionPackageManifest c = MissionPackageManifest.fromXml(
                         fi.fileMetadata(), fi.file().getAbsolutePath());
                 if (c == null || !c.isValid()) {
-                    Log.w(TAG, "Failed to load Manifest: " + fi.toString());
+                    Log.w(TAG, "Failed to load Manifest: " + fi);
                     continue;
                 }
                 MissionPackageManifest existing = pkgs.get(c.getName());

@@ -12,6 +12,7 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
 
+import com.atakmap.android.filesystem.ResourceFile;
 import com.atakmap.android.importexport.http.ErrorLogsClient;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
@@ -30,8 +31,7 @@ import java.io.IOException;
 
 /**
  * Task to export crash logs
- * 
- * 
+
  */
 public class ExportCrashLogsTask extends AsyncTask<Void, Integer, Boolean>
         implements OnCancelListener {
@@ -56,7 +56,8 @@ public class ExportCrashLogsTask extends AsyncTask<Void, Integer, Boolean>
                 String filename) {
             filename = filename.toLowerCase(LocaleUtil.getCurrent());
 
-            return !filename.endsWith(".json")
+            return !filename.endsWith("." + ResourceFile.MIMEType.FPKG.EXT)
+                    && !filename.endsWith(".json")
                     && !filename.contains("ataknativecrash");
         }
     };
@@ -202,7 +203,7 @@ public class ExportCrashLogsTask extends AsyncTask<Void, Integer, Boolean>
     @Override
     public void onCancel(DialogInterface arg0) {
         // task was cancelled, e.g. user pressed back
-        Log.d(TAG, "onCancel");
+        Log.d(TAG, "cancelling the export crash log task");
 
         // user pushed back button or we hit an error, cancel the task, and notify UI thread via
         // onCancelled()

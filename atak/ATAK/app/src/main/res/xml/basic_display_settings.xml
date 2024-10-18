@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/basic_display_settings">
+       <Preference android:title="@string/unitDisplayPreferences"
+            android:key="unitPreferences"
+            android:summary="@string/preferences_text132"
+            android:icon="@drawable/ic_menu_ruler" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/enable_zoom_title"
+            android:defaultValue="true"
+            android:key="map_zoom_visible"
+            android:summary="@string/preferences_text134"
+            android:icon="@drawable/zoom" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preferences_text133"
+            android:defaultValue="true"
+            android:key="map_scale_visible"
+            android:summary="@string/preferences_text136"
+            android:icon="@drawable/ic_mapscale" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preferences_text135"
+            android:defaultValue="false"
+            android:dependency="map_scale_visible"
+            android:key="map_scale_rounding"
+            android:summary="@string/preferences_text136"
+            android:icon="@drawable/ic_mapscale_rounding" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/designate_map_center"
+            android:defaultValue="false"
+            android:summary="@string/designate_map_center_summary"
+            android:icon="@drawable/ic_center_designator"
+            android:key="map_center_designator" />
+
+        <com.atakmap.android.gui.PanListPreference
+            android:title="@string/pref_self_coord_info"
+            android:key="self_coord_info_display"
+            android:summary="@string/pref_self_coord_info_summary"
+            android:entries="@array/self_coord_display_names"
+            android:entryValues="@array/self_coord_display_values"
+            android:defaultValue="bottom_right"
+            android:icon="@drawable/ic_pref_self_coord_info" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

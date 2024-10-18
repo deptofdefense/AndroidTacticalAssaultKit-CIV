@@ -29,7 +29,7 @@ public class GRGContentResolver extends AbstractLayerContentResolver implements
     private final DatasetRasterLayer2 _rasterLayer;
     private final FeatureDataStore _outlinesDB;
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public GRGContentResolver(MapView mv, LocalRasterDataStore rasterDB,
             DatasetRasterLayer2 rasterLayer, FeatureDataStore outlinesDB) {
         super(mv, rasterDB);

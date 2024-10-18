@@ -104,7 +104,8 @@ public class NetworkOperationManager {
     /**
      * Register handler, return unique requestType.
      * Optionally salt the clazz hash. e.g. this could be used to allow a single Operation implementation
-     * to be used for multiple request types
+     * to be used for multiple request types.   This is most evident when the same request handler is registered
+     * across multiple plugins.
      *
      * @param clazz the class to register
      * @param handler the operation handler
@@ -113,7 +114,15 @@ public class NetworkOperationManager {
      */
     static synchronized public Integer register(String clazz,
             Operation handler, String salt) {
-        final String id = handler.getClass().getClassLoader().hashCode() + ":"
+        ClassLoader cl = handler.getClass().getClassLoader();
+
+        //  Class. Implementations are free to return null for classes that were loaded by the
+        //  bootstrap class loader. The Android reference implementation, though, always returns
+        //  a reference to an actual class loader.
+        if (cl == null)
+            cl = ClassLoader.getSystemClassLoader();
+
+        final String id = cl.hashCode() + ":"
                 + clazz + ":" +
                 (salt == null ? 0 : salt.hashCode());
         final Integer uid = id.hashCode();

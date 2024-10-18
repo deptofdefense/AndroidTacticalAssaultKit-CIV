@@ -35,7 +35,7 @@ class MigrationShim {
     private static final String TAG = "MigrationShim";
 
     @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.6")
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.8")
     static void onMigration(final Activity activity) {
         final File migrationPackage = new File(
                 Environment.getExternalStorageDirectory(), "atak/.migration");

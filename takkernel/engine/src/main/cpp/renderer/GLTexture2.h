@@ -6,6 +6,7 @@
 #include "port/Platform.h"
 #include "renderer/Bitmap2.h"
 #include "math/Point.h"
+#include "math/Point2.h"
 #include "util/MemBuffer2.h"
 
 #include "renderer/Bitmap.h"
@@ -145,6 +146,13 @@ namespace TAK
                                                             const atakmap::math::Point<float> &lowerRight,
                                                             const atakmap::math::Point<float> &lowerLeft,
                                                             const std::size_t numCellsX, const std::size_t numCellsY) NOTHROWS;
+			ENGINE_API
+            Util::TAKErr GLTexture2_createQuadMeshTexCoords(Util::MemBuffer2 &value,
+                                                            const Math::Point2<float> &upperLeft,
+                                                            const Math::Point2<float> &upperRight,
+                                                            const Math::Point2<float> &lowerRight,
+                                                            const Math::Point2<float> &lowerLeft,
+                                                            const std::size_t numCellsX, const std::size_t numCellsY) NOTHROWS;
 
 			ENGINE_API
             Util::TAKErr GLTexture2_createQuadMeshTexCoords(float *buffer,
@@ -156,8 +164,10 @@ namespace TAK
 			ENGINE_API void GLTexture2_createQuadMeshIndexBuffer(uint16_t *buffer, const std::size_t numCellsX, const std::size_t numCellsY) NOTHROWS;
 			ENGINE_API Util::TAKErr GLTexture2_createQuadMeshIndexBuffer(Util::MemBuffer2 &value, const int type, const std::size_t numCellsX, const std::size_t numCellsY) NOTHROWS;
 
+            ENGINE_API Util::TAKErr GLTexture2_getFormatAndDataType(GLenum *format, GLenum *dataType, const Bitmap2::Format fmt) NOTHROWS;
 			ENGINE_API Util::TAKErr GLTexture2_getFormatAndDataType(int *format, int *dataType, const Bitmap2::Format fmt) NOTHROWS;
 
+            ENGINE_API Util::TAKErr GLTexture2_getBitmapFormat(Bitmap2::Format *value, const GLenum format, const GLenum dataType) NOTHROWS;
 			ENGINE_API Util::TAKErr GLTexture2_getBitmapFormat(Bitmap2::Format *value, const int format, const int dataType) NOTHROWS;
 
 			struct GLCompressedTextureData {

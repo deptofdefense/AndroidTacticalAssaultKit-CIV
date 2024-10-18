@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿#ifdef MSVC
+#pragma once
 
 #include "renderer/GL.h"
 #include "GLBatchPointBuffer.h"
@@ -247,3 +248,4 @@ namespace TAK {
         }
     }
 }
+#endif

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/preferences_text87"
+        android:key="alternateContactCategory">
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preferences_text88"
+            android:key="saHasPhoneNumber"
+            android:defaultValue="true"
+            android:icon="@drawable/phone_icon_settings"
+            android:summary="@string/preferences_text89"
+            />
+        <com.atakmap.android.gui.PanListPreference
+            android:icon="@drawable/voip_icon_settings"
+            android:entryValues="@array/voip_assignment_values"
+            android:entries="@array/voip_assignment_values"
+            android:summary="@string/preferences_text90"
+            android:key="saSipAddressAssignment"
+            android:title="@string/preferences_text91"
+            android:defaultValue="@string/voip_assignment_disabled" />
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:icon="@drawable/voip_icon_settings"
+            android:title="@string/preferences_text92"
+            android:summary="@string/preferences_text93"
+            android:inputType="textUri"
+            android:key="saSipAddress"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:icon="@drawable/xmpp_logo_settings"
+            android:title="@string/preferences_text94"
+            android:summary="@string/preferences_text95"
+            android:inputType="textEmailAddress"
+            android:key="saXmppUsername" />
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:icon="@drawable/email_icon_settings"
+            android:title="@string/preferences_text96"
+            android:summary="@string/preferences_text97"
+            android:inputType="textEmailAddress"
+            android:key="saEmailAddress"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:icon="@drawable/urn"
+            android:title="@string/urn_title"
+            android:summary="@string/urn_summary"
+            android:inputType="number"
+            android:key="saURN"/>
+    </PreferenceCategory>
+</PreferenceScreen>

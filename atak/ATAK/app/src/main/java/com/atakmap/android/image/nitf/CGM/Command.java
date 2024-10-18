@@ -1255,19 +1255,19 @@ public class Command {
     protected final void info(String message) {
         Log.i(TAG,
                 LogString(this.elementClass, this.elementID, message + " "
-                        + toString()));
+                        + this));
     }
 
     protected final void unsupported(String message) {
         Log.i(TAG,
                 LogString(this.elementClass, this.elementID, message + " "
-                        + toString()));
+                        + this));
     }
 
     protected final void unimplemented(String message) {
         Log.i(TAG,
                 LogString(this.elementClass, this.elementID, message + " "
-                        + toString()));
+                        + this));
     }
 
     /**

@@ -19,7 +19,7 @@ import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.RasterDataStore;
 import com.atakmap.map.layer.raster.RasterLayer2;
 import com.atakmap.math.MathUtils;
-import com.atakmap.util.Disposable;
+import gov.tak.api.util.Disposable;
 
 import java.util.ArrayList;
 import java.util.Collection;

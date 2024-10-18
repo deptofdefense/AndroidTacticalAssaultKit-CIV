@@ -14,17 +14,18 @@ buildscript { scriptHandler ->
         if(project.findProperty('kernelBuildTarget') != 'android') {
             classpath "gov.tak.gradle.cmake:gradle-cmake-plugin:$gradleCmakePluginVersion"
         }
+        classpath "org.owasp:dependency-check-gradle:${owaspDependencyCheckVersion}"
     }
 }
 
 // library version
 
 def majorVersion = 0
-def minorVersion = 38
-def patchVersion = 3
+def minorVersion = 59
+def patchVersion = 1
 
 // Version code for Android builds, you MUST increase this by 1 if you change ANY of the version components above
-ext.versionCode = 75
+ext.versionCode = 139
 
 
 

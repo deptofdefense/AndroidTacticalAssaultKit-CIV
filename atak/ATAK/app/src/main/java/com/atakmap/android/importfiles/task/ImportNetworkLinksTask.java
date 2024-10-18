@@ -150,7 +150,7 @@ public class ImportNetworkLinksTask extends
                     File destPath = sorter.getDestinationPath(file);
                     if (destPath == null) {
                         Log.w(TAG,
-                                sorter.toString()
+                                sorter
                                         + ", Unable to determine destination path for: "
                                         + file.getAbsolutePath());
                         continue;
@@ -171,7 +171,7 @@ public class ImportNetworkLinksTask extends
                         // has special handling by the UI code
                         res = _resource;
                         Log.d(TAG, "Found match on updated resource: "
-                                + _resource.toString());
+                                + _resource);
                     } else {
                         // otherwise this is a child resource from a NetworkLink
                         res = _resource.findChildByPath(file.getAbsolutePath());
@@ -199,7 +199,7 @@ public class ImportNetworkLinksTask extends
                         String existingMD5 = HashingUtils.md5sum(destPath);
                         if (existingMD5 != null && existingMD5.equals(newMD5)) {
                             Log.d(TAG,
-                                    sorter.toString()
+                                    sorter
                                             + ", File has not been updated, discarding: "
                                             + file.getAbsolutePath()
                                             + " based on MD5: " + newMD5);
@@ -207,7 +207,7 @@ public class ImportNetworkLinksTask extends
                             if (!IOProviderFactory.delete(file,
                                     IOProvider.SECURE_DELETE))
                                 Log.w(TAG,
-                                        sorter.toString()
+                                        sorter
                                                 + ", Failed to delete un-updated file: "
                                                 + file.getAbsolutePath());
 
@@ -223,7 +223,7 @@ public class ImportNetworkLinksTask extends
                     if (sorter.beginImport(file, flags)) {
                         sortedCount++;
                         Log.d(TAG,
-                                sorter.toString() + ", Sorted: "
+                                sorter + ", Sorted: "
                                         + file.getAbsolutePath()
                                         + " to " + destPath.getAbsolutePath());
 
@@ -237,7 +237,7 @@ public class ImportNetworkLinksTask extends
                         break;
                     } else
                         Log.w(TAG,
-                                sorter.toString()
+                                sorter
                                         + ", Matched, but did not sort: "
                                         + file.getAbsolutePath());
                 } // end if sorter match was found
@@ -304,7 +304,7 @@ public class ImportNetworkLinksTask extends
             if (_resource.getRefreshSeconds() > 0) {
                 Log.d(TAG,
                         "Scheduling refresh task for top level resource: "
-                                + _resource.toString());
+                                + _resource);
                 Intent intent = new Intent();
                 intent.setAction(
                         ImportExportMapComponent.KML_NETWORK_LINK_REFRESH);

@@ -5,6 +5,8 @@ import android.content.Context;
 import android.preference.DialogPreference;
 import android.preference.Preference;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,14 @@ public class PanPreference extends Preference {
 
     public PanPreference(Context context) {
         super(context);
+    }
+
+    @Override
+    protected View onCreateView(ViewGroup parent) {
+        View v = super.onCreateView(parent);
+        if (!isEnabled())
+            v.setEnabled(false);
+        return v;
     }
 
     /**
