@@ -1,5 +1,16 @@
 # Version History
 
+## 4.6.0.3
+
+* Bug Fixes
+  * migrate to the latest ukraine strings
+  * free up the labels if the sensor field of view has been released.
+  * do not overwrite an existing iconset blindly - clobbering users iconsets.
+  * protect against a crash in certificate enrollment (Playstore Crash Log)
+  * unable to reproduce crash log from a Nokia 3.1 A (Playstore Crash Log)
+  * remove query all packages on the playstore publication apk
+  * fix incorrect rendering of the overlayed layers on Navigation icons
+
 ## 4.6.0.2
 
 * Bug Fixes
