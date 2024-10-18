@@ -1,5 +1,14 @@
 # Version History
 
+## 4.5.1.3
+
+* Bug Fixes
+  * GRG Builder Vectorized KML includes icons when labels are turned off
+  * migrate to takkernel 0.38.2 to make use of a more robust Unsafe class for Android 12
+* Feature Additions
+  * Switch back to legacy tool bar by default
+  * Allow for the user to select legacy or new tool bar
+
 ## 4.5.1.2
 
 * Bug Fixes
