@@ -10,7 +10,6 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
-import com.atakmap.net.AtakCertificateDatabase;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -38,7 +37,8 @@ class PluginValidator {
 
     private final static String TAG = "PluginValidator";
 
-    private final static Map<String, String>  hashCache = new HashMap<>();
+    private final static Map<String, String> hashCache = new HashMap<>();
+    private final static Map<String, String> validatedCache = new HashMap<>();
 
     private static final int INVALID = 0;
     private static final int VALID = 1;
@@ -81,17 +81,23 @@ class PluginValidator {
         // Check the permanent cache to see if a plugin with a specific hash has been considered
         // valid or invalid.
         try {
-            final byte[] recordedHash = AtakCertificateDatabase.getCertificate(pkgname);
+            final String recordedHash = retrieveValidityRecord(pkgname);
             if (recordedHash != null) {
-                String recordedHashString = new String(recordedHash, FileSystemUtils.UTF8_CHARSET);
-                String[] vals = recordedHashString.split("\\.");
+                String[] vals = recordedHash.split("\\.");
                 if (vals.length > 1) {
                     if (vals[0].equals(apkHash)) {
                         Log.d(TAG, "previously validated signature and hashes for: " + pkgname +
                                 " took: " + (SystemClock.elapsedRealtime() - start) + "ms");
-                        return vals[1].equals(Integer.toString(VALID));
+                        if (vals[1].equals(Integer.toString(INVALID)))
+                            return false;
+
+                        // if the public signature that was able to verify the aab is found in the
+                        // whitelist.
+                        return vals.length > 2 &&
+                                !FileSystemUtils.isEmpty(vals[2]) &&
+                                contains(whitelist, vals[2]);
                     } else {
-                        AtakCertificateDatabase.deleteCertificate(pkgname);
+                        removeValidityRecord(pkgname);
                     }
                 }
             }
@@ -107,8 +113,7 @@ class PluginValidator {
 
             // if the zip entry does not exist, there is no transparent signing
             if (jwtEntry == null) {
-                AtakCertificateDatabase.saveCertificate(pkgname,
-                        (apkHash + "." + INVALID).getBytes(FileSystemUtils.UTF8_CHARSET));
+                persistValidityRecord(pkgname, apkHash, INVALID, "");
                 return false;
             }
 
@@ -123,11 +128,11 @@ class PluginValidator {
 
             final String headerpayload = jwt.substring(0, jwt.lastIndexOf("."));
             final String sig = jwt.substring(jwt.lastIndexOf(".")+1);
-            final boolean v = check(Base64.decode(sig, Base64.NO_WRAP | Base64.URL_SAFE),
+            final byte[] publickey = check(Base64.decode(sig, Base64.NO_WRAP | Base64.URL_SAFE),
                     headerpayload.getBytes(), certder);
 
             //Log.d(TAG, "package: " + pkgname + " valid: " + v);
-            if (v) {
+            if (publickey != null) {
                 final String payloadString = new String(Base64.decode(headerpayload.split("\\.")[1],
                         Base64.NO_WRAP | Base64.URL_SAFE), FileSystemUtils.UTF8_CHARSET);
                 final JSONObject  payload = new JSONObject(payloadString);
@@ -155,21 +160,20 @@ class PluginValidator {
                     if (!sha256.equals(classesdexSha256)) {
                         Log.d(TAG, "valid signature but invalid hashes for: " + pkgname + "@" + path +
                                " took: " + (SystemClock.elapsedRealtime() - start) + "ms");
-                        AtakCertificateDatabase.saveCertificate(pkgname,
-                                (apkHash + "." + INVALID).getBytes(FileSystemUtils.UTF8_CHARSET));
+                        persistValidityRecord(pkgname, apkHash, INVALID, "");
                         return false;
                     }
                 }
 
                 Log.d(TAG, "valid signature and hashes for: " + pkgname + " took: " + (SystemClock.elapsedRealtime() - start) + "ms");
-                AtakCertificateDatabase.saveCertificate(pkgname,
-                        (apkHash + "." + VALID).getBytes(FileSystemUtils.UTF8_CHARSET));
+
+                persistValidityRecord(pkgname, apkHash, VALID,
+                        ATAKUtilities.bytesToHex(publickey));
                 return true;
 
             } else {
                 Log.d(TAG, "invalid signature for: " + pkgname + " took: " + (SystemClock.elapsedRealtime() - start) + "ms");
-                AtakCertificateDatabase.saveCertificate(pkgname,
-                        (apkHash + "." + INVALID).getBytes(FileSystemUtils.UTF8_CHARSET));
+                persistValidityRecord(pkgname, apkHash, INVALID, "");
             }
 
 
@@ -184,8 +188,7 @@ class PluginValidator {
             }
         }
 
-        AtakCertificateDatabase.saveCertificate(pkgname,
-                (apkHash + "." + INVALID).getBytes(FileSystemUtils.UTF8_CHARSET));
+        persistValidityRecord(pkgname, apkHash, INVALID, "");
         return false;
     }
 
@@ -208,7 +211,21 @@ class PluginValidator {
         }
     }
 
-    private static boolean check(final byte[] signature, final byte[] message, byte[][] whitelist) throws CertificateException,
+
+
+    /**
+     * Checks the message and signature to make sure it is valid based on the public key.  If so
+     * it will return the public key that was considered valid
+     * @param signature the signature for the app bundle
+     * @param message the message
+     * @param whitelist list of public keys used the check used for checking
+     * @return the valid public key otherwise null.
+     * @throws CertificateException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     * @throws SignatureException
+     */
+    private static byte[] check(final byte[] signature, final byte[] message, byte[][] whitelist) throws CertificateException,
             NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
         Throwable err = null;
@@ -223,7 +240,7 @@ class PluginValidator {
                 sig.initVerify(key);
                 sig.update(message);
                 if (sig.verify(signature))
-                    return true;
+                    return certder;
             } catch(Throwable t) {
                 err = t;
             }
@@ -238,6 +255,31 @@ class PluginValidator {
             throw (InvalidKeyException) err;
         else if(err instanceof SignatureException)
             throw (SignatureException) err;
+        return null;
+    }
+
+    private static void removeValidityRecord(String s) {
+        //AtakCertificateDatabase.removeValidityRecord(s);
+        validatedCache.remove(s);
+    }
+
+    private static void persistValidityRecord(String pkgName,
+                                              String hash, int validity, String key) {
+        //AtakCertificateDatabase.persistValidityRecord(pkgName,
+        //        (hash + "." + validity + "." + key).getBytes(FileSystemUtils.UTF8_CHARSET)););
+        validatedCache.put(pkgName, hash + "." + validity + "." + key);
+    }
+
+    private static String retrieveValidityRecord(String s) {
+        // byte[] b = AtakCertificateDatabase.getCertificate(s);
+        // return (b == null)?null:new String(b, FileSystemUtils.UTF8_CHARSET);
+        return validatedCache.get(s);
+    }
+
+    private static boolean contains(String[] list, String val) {
+        for (String item : list)
+            if (item.equalsIgnoreCase(val))
+                return true;
         return false;
     }
 
