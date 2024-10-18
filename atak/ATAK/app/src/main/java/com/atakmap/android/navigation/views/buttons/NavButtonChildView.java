@@ -258,7 +258,7 @@ public class NavButtonChildView extends LinearLayout {
 
         // Current view settings
         final boolean alignRight = _prefs.get(
-                NavView.PREF_NAV_ORIENTATION_RIGHT, false);
+                NavView.PREF_NAV_ORIENTATION_RIGHT, true);
         final boolean buttonsVisible = nav.buttonsVisible();
         final View menuBtn = nav.findViewById(R.id.tak_nav_menu_button);
         final View sideLayout = nav.findViewById(R.id.side_layout);
