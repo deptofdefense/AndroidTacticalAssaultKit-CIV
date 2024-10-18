@@ -4,12 +4,12 @@ package com.atakmap.android.contact;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.os.Bundle;
 
 import com.atakmap.android.contact.Contact.UpdateStatus;
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapItem;
@@ -487,8 +487,16 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
         NavButtonModel mdl = NavButtonManager.getInstance()
                 .getModelByReference(ref);
         if (mdl != null) {
-            mdl.setBadgeCount(totalUnread);
-            NavButtonManager.getInstance().notifyModelChanged(mdl);
+            MapView mapView = MapView.getMapView();
+            if (mapView != null) {
+                mapView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mdl.setBadgeCount(totalUnread);
+                        NavButtonManager.getInstance().notifyModelChanged(mdl);
+                    }
+                });
+            }
         }
     }
 }
