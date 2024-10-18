@@ -803,7 +803,7 @@ public class CotMapComponent extends AbstractMapComponent implements
         }
 
         FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
-        if (fp == null || !fp.hasMilCapabilities()) {
+        if (fp != null && fp.hasMilCapabilities()) {
             if (!FileSystemUtils.isEmpty(urn)) {
                 CotDetail variablemessage = new CotDetail("vmf");
                 variablemessage.setAttribute("urn", urn);

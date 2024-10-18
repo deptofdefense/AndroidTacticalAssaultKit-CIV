@@ -2214,12 +2214,15 @@ public class LocationMapComponent extends AbstractMapComponent implements
             } catch (Exception ignored) {
             }
         } else {
-            Log.d(TAG, "unable to  obtain the telephony device id");
+            Log.d(TAG, "unable to obtain the telephony device id");
         }
 
         // possibly telephonyDeviceId is getting set to unknown / just return null instead
-        if (telephonyDeviceId != null
-                && telephonyDeviceId.equalsIgnoreCase(Build.UNKNOWN))
+        // Note: in the case of the herelink controllers which run Android 7, the telephony
+        // id is set to 862391030003883.
+        if (telephonyDeviceId != null &&
+                (telephonyDeviceId.equalsIgnoreCase(Build.UNKNOWN) ||
+                        (telephonyDeviceId.equalsIgnoreCase("862391030003883") )))
             return null;
 
         return telephonyDeviceId;
