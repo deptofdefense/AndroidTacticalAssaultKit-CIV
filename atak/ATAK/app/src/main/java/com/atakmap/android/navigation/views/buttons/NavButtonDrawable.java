@@ -15,6 +15,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
@@ -22,10 +23,10 @@ import android.renderscript.ScriptIntrinsicBlur;
 import android.renderscript.Type;
 import android.widget.ImageView;
 
-import com.atakmap.android.gui.drawable.ShadowDrawable;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.atakmap.android.gui.drawable.ShadowDrawable;
 
 /**
  * Drawable icon used for {@link NavButton} and other nav-related icons
@@ -78,6 +79,7 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
 
     public NavButtonDrawable(Context appContext, Drawable baseDrawable) {
         _context = appContext;
+
         _baseDrawable = baseDrawable;
         _baseDrawable.setCallback(this);
         _basePaint = new Paint(
@@ -229,6 +231,28 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
 
         // Draw the top-right and bottom-right badges
         drawBadges(canvas);
+
+
+        // restore original behavior with the layer drawable used for icons
+        // for simple counting one should make use of the badging capability
+        // within the following example -
+        //NavButtonModel mdl = NavButtonManager.getInstance()
+        //        .getModelByPlugin(HelloWorldTool.this);
+        //if (mdl != null) {
+        //    // Increment the badge count and refresh
+        //    mdl.setBadgeCount(++count);
+        //    NavButtonManager.getInstance().notifyModelChanged(mdl);
+        //    Log.d(TAG, "increment visual count to: " + count);
+        //}
+
+        if (_baseDrawable instanceof LayerDrawable) {
+            LayerDrawable layer = (LayerDrawable) _baseDrawable;
+            for (int i = 1; i < layer.getNumberOfLayers();++i) {
+                Drawable d = layer.getDrawable(i);
+                d.draw(canvas);
+            }
+        }
+
     }
 
     private void setupScratchCanvas() {

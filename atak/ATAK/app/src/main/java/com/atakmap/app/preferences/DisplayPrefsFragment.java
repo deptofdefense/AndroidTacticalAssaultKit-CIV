@@ -74,16 +74,30 @@ public class DisplayPrefsFragment extends AtakPreferenceFragment {
                     }
                 });
 
-        Preference gridLinesPreference = (Preference) findPreference(
-                "colorTinting");
-        gridLinesPreference
-                .setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        showScreen(new ColorAndTintingPreferenceFragment());
-                        return true;
-                    }
-                });
+        Preference my_location_icon_preference = findPreference(
+                "my_location_icon_color");
+        my_location_icon_preference
+                .setOnPreferenceClickListener(
+                        new Preference.OnPreferenceClickListener() {
+                            @Override
+                            public boolean onPreferenceClick(
+                                    Preference preference) {
+                                showScreen(new SelfMarkerCustomFragment());
+                                return true;
+                            }
+                        });
+
+        Preference actionbarCustomize = findPreference("my_actionbar_settings");
+        actionbarCustomize
+                .setOnPreferenceClickListener(
+                        new Preference.OnPreferenceClickListener() {
+                            @Override
+                            public boolean onPreferenceClick(
+                                    Preference preference) {
+                                showScreen(new ActionBarPreferences());
+                                return true;
+                            }
+                        });
 
         Preference layerOutlinesPreference = (Preference) findPreference(
                 "additionalDisplay");
