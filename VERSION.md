@@ -1,5 +1,10 @@
 # Version History
 
+## 4.5.1.11
+
+* Feature Addition
+  * Enabling the cot type picker in the civilian builds
+
 ## 4.5.1.10
 
 * Bug Fixes
